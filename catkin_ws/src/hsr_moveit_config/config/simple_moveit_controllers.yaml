@@ -1,0 +1,24 @@
+controller_list:
+  - name: arm_controller
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: True
+    joints:
+      - arm_lift_joint
+      - arm_flex_joint
+      - arm_roll_joint
+      - wrist_flex_joint
+      - wrist_roll_joint
+  - name: hand_controller
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: True
+    joints:
+      - hand_motor_joint
+  - name: head_controller
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: True
+    joints:
+      - head_pan_joint
+      - head_tilt_joint
