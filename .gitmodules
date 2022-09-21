@@ -17,3 +17,6 @@
 [submodule "handyman-unity"]
 	path = handyman-unity
 	url = https://github.com/RoboCupatHomeSim/handyman-unity.git
+[submodule "catkin_ws/src/hsr_meshes"]
+	path = catkin_ws/src/hsr_meshes
+	url = https://github.com/ToyotaResearchInstitute/hsr_meshes.git
