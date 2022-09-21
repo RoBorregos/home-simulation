@@ -1,0 +1,19 @@
+[submodule "catkin_ws/src/hsr_description"]
+	path = catkin_ws/src/hsr_description
+	url = https://github.com/ToyotaResearchInstitute/hsr_description.git
+
+[submodule "catkin_ws/src/handyman-ros"]
+	path = catkin_ws/src/handyman-ros
+	url = https://github.com/RoboCupatHomeSim/handyman-ros.git
+
+[submodule "catkin_ws/src/sigverse_ros_package"]
+	path = catkin_ws/src/sigverse_ros_package
+	url = https://github.com/SIGVerse/sigverse_ros_package.git
+
+[submodule "common-unity"]
+	path = common-unity
+	url = https://github.com/RoboCupatHomeSim/common-unity.git
+
+[submodule "handyman-unity"]
+	path = handyman-unity
+	url = https://github.com/RoboCupatHomeSim/handyman-unity.git
