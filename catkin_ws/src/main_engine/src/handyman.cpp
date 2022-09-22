@@ -8,7 +8,7 @@
 #include <sensor_msgs/JointState.h>
 #include <nodelet/nodelet.h>
 
-class HandymanSample
+class HandymanMain
 {
 private:
   enum Step
@@ -73,6 +73,7 @@ private:
 
     std::vector<double> arm_positions { 0.0, 0.0, 0.0, 0.0, 0.0 };
     arm_joint_trajectory_.points[0].positions = arm_positions;
+    arm_joint_trajectory_.points[0].time_from_start = ros::Duration(2);
   }
 
 
@@ -113,17 +114,14 @@ private:
 
   void trajectoriesCallback(const sensor_msgs::JointState::ConstPtr& message)
   {
-    ROS_INFO("Moving Group with MoveIt: %d", message->position.size());
+    const double fake_controller_rate = 50.0; 
+    ros::Duration duration(1/fake_controller_rate);
     if (message->position.size() == 1) {
-      operateHand(pub_gripper_trajectory, message->position);
+      operateHand(pub_gripper_trajectory, message->position, duration);
     }
     if (message->position.size() == 5) {
-      ros::Duration duration(0.075);
       std::vector<double> positions = message->position;
-      // Swap order first two elements
-      double tmp = positions[0];
-      positions[0]=positions[1];
-      positions[1]=tmp;
+      std::swap(positions[0], positions[1]); // Fix Order for Unity.
       moveArm(pub_arm_trajectory, positions, duration);
     }
   }
@@ -176,13 +174,13 @@ private:
     publisher.publish(arm_joint_trajectory_);
   }
 
-  void operateHand(ros::Publisher &publisher, const std::vector<double> &positions)
+  void operateHand(ros::Publisher &publisher, const std::vector<double> &positions, ros::Duration &duration)
   {
     std::vector<std::string> joint_names {"hand_motor_joint"};
     
     trajectory_msgs::JointTrajectoryPoint point;
     point.positions = positions;
-    point.time_from_start = ros::Duration(2);
+    point.time_from_start = duration;
 
     trajectory_msgs::JointTrajectory joint_trajectory;
     joint_trajectory.joint_names = joint_names;
@@ -244,22 +242,70 @@ public:
 
     ROS_INFO("Handyman start!");
 
-    ros::Subscriber sub_msg                = node_handle.subscribe<handyman::HandymanMsg>(sub_msg_to_robot_topic_name, 100, &HandymanSample::messageCallback, this);
+    ros::Subscriber sub_msg                = node_handle.subscribe<handyman::HandymanMsg>(sub_msg_to_robot_topic_name, 100, &HandymanMain::messageCallback, this);
     ros::Publisher  pub_msg                = node_handle.advertise<handyman::HandymanMsg>(pub_msg_to_moderator_topic_name, 10);
     ros::Publisher  pub_base_twist         = node_handle.advertise<geometry_msgs::Twist>            (pub_base_twist_topic_name, 10);
     pub_arm_trajectory     = node_handle.advertise<trajectory_msgs::JointTrajectory>(pub_arm_trajectory_topic_name, 10);
     pub_gripper_trajectory = node_handle.advertise<trajectory_msgs::JointTrajectory>(pub_gripper_trajectory_topic_name, 10);   
-    ros::Subscriber sub_trajectories       = node_handle.subscribe<sensor_msgs::JointState>(sub_trajectories_topic_name, 100, &HandymanSample::trajectoriesCallback, this);
-   
+    ros::Subscriber sub_trajectories       = node_handle.subscribe<sensor_msgs::JointState>(sub_trajectories_topic_name, 100, &HandymanMain::trajectoriesCallback, this);
+
     tf::TransformListener tf_listener;
+
     // Start: Temporary Added
+
     while (ros::ok())
     {
-      ros::spinOnce();
+      if(is_failed_)
+      {
+        ROS_INFO("Task failed!");
+        step_ = Initialize;
+      }
+      switch(step_)
+      {
+        case Initialize:
+        {
+          ROS_INFO("Initialize");
+          reset();
+          step_++;
+          break;
+        }
+        case Ready:
+        {
+          if(is_started_)
+          {
+            ROS_INFO("Ready");
+            
+            // Set Unity Arm to Default Position.
+            pub_arm_trajectory.publish(arm_joint_trajectory_);
+            ros::Duration(1).sleep();
+    
+            sendMessage(pub_msg, MSG_I_AM_READY);
 
+            ROS_INFO("Task start!");
+
+            step_++;
+          }
+          break;
+        }
+        case WaitForInstruction:
+        {
+          if(instruction_msg_!="")
+          {
+            ROS_INFO("%s", instruction_msg_.c_str());
+
+            // TODO: HANDLE INSTRUCTION
+
+            step_++;
+          }
+          break;
+        }
+      }
+
+      ros::spinOnce();
       loop_rate.sleep();
     }
     return 0;
+
     // End: Temporary Added
     while (ros::ok())
     {
@@ -429,7 +475,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "handyman_sample");
 
-  HandymanSample handyman_sample;
+  HandymanMain handyman_sample;
   return handyman_sample.run(argc, argv);
 };
 

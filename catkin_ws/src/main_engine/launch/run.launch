@@ -1,4 +1,6 @@
 <launch>
+
+  <!-- Sigverse & Main Engine -->
 	<arg name="sub_msg_to_robot_topic_name"       default="/handyman/message/to_robot" />
 	<arg name="pub_msg_to_moderator_topic_name"   default="/handyman/message/to_moderator" />
 	<arg name="pub_base_twist_topic_name"         default="/hsrb/command_velocity" />
@@ -33,4 +35,9 @@
     <remap from="image_rect" to="/hsrb/head_rgbd_sensor/depth_registered/image_raw"/>
     <remap from="points" to="/hsrb/head_rgbd_sensor/depth_registered/points"/>
   </node>
+
+	<!-- MoveIt -->
+  <include file="$(find hsr_moveit_config)/launch/demo.launch" > 
+	</include>
+
 </launch>
