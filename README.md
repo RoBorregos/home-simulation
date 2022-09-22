@@ -40,5 +40,5 @@ For more information about the project system, structure, and development areas 
 | Ricardo Chapa | [ricardochaparomero@gmail.com](mailto:ricardochaparomero@gmail.com) | [@RicardoChapaRomero](https://github.com/RicardoChapaRomero) | Human Recognition |
 | Andy Salcedo | [andrea2702@gmail.com](mailto:andrea2702@gmail.com) | [@andrea2702](https://github.com/andrea2702) | Navigation |
 | Edison Altamirano | [](mailto:) | []() | Navigation |
-| Bryan Marquez | [](mailto:) | []() | Navigation |
+| Bryan Marquez | [bryanmqz@outlook.com](mailto:) | [https://github.com/BryanMqz]() | Navigation |
 | Erasmo Villareal | [](mailto:) | []() | Object Manipulation |
