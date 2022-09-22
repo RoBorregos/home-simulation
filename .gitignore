@@ -2,3 +2,5 @@ __ignore__/*
 
 catkin_ws/build/*
 catkin_ws/devel/*
+
+catkin_ws/src/vision/src/human_detection/models/people/yolov3.weights
