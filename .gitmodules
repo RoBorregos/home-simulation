@@ -1,6 +1,6 @@
 [submodule "catkin_ws/src/hsr_description"]
 	path = catkin_ws/src/hsr_description
-	url = https://github.com/ToyotaResearchInstitute/hsr_description.git
+	url = https://github.com/RoBorregos/hsr_description.git
 
 [submodule "catkin_ws/src/handyman-ros"]
 	path = catkin_ws/src/handyman-ros
