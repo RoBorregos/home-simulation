@@ -2,3 +2,6 @@ __ignore__/*
 
 catkin_ws/build/*
 catkin_ws/devel/*
+
+catkin_ws/src/manipulation/object_detector/models
+catkin_ws/src/manipulation/object_detector/resources
