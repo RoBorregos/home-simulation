@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <std_msgs/String.h>
+#include <std_srvs/Empty.h>
 #include <geometry_msgs/Twist.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
@@ -7,6 +8,11 @@
 #include <handyman/HandymanMsg.h>
 #include <sensor_msgs/JointState.h>
 #include <nodelet/nodelet.h>
+#include <actionlib/client/simple_action_client.h>
+#include <object_detector/DetectObjects3DAction.h>
+
+using namespace object_detector;
+typedef actionlib::SimpleActionClient<DetectObjects3DAction> Detect3DClient;
 
 class HandymanMain
 {
@@ -48,6 +54,14 @@ private:
 
   ros::Publisher  pub_arm_trajectory;
   ros::Publisher  pub_gripper_trajectory;
+  ros::Publisher  pub_head_trajectory;
+
+  // clear_octomap
+  ros::ServiceClient clear_octomap;
+
+
+  ros::NodeHandle nh_;
+  Detect3DClient ac_detection3D; 
 
   void init()
   {
@@ -71,9 +85,9 @@ private:
     is_finished_ = false;
     is_failed_   = false;
 
-    std::vector<double> arm_positions { 0.0, 0.0, 0.0, 0.0, 0.0 };
+    std::vector<double> arm_positions { 0.0, 0.0, 1.5708, -1.5708, 0.0 };
     arm_joint_trajectory_.points[0].positions = arm_positions;
-    arm_joint_trajectory_.points[0].time_from_start = ros::Duration(2);
+    arm_joint_trajectory_.points[0].time_from_start = ros::Duration(1.75);
   }
 
 
@@ -119,11 +133,15 @@ private:
     if (message->position.size() == 1) {
       operateHand(pub_gripper_trajectory, message->position, duration);
     }
+    if (message->position.size() == 2) {
+      operateHead(pub_head_trajectory, message->position, duration);
+    }
     if (message->position.size() == 5) {
       std::vector<double> positions = message->position;
       std::swap(positions[0], positions[1]); // Fix Order for Unity.
       moveArm(pub_arm_trajectory, positions, duration);
     }
+
   }
 
   void sendMessage(ros::Publisher &publisher, const std::string &message)
@@ -188,6 +206,26 @@ private:
     publisher.publish(joint_trajectory);
   }
 
+  void initHead(){
+    ros::Duration duration(1.25);
+    std::vector<double> positions = {-0.5663, -0.8887};
+    operateHead(pub_head_trajectory, positions, duration);
+  }
+
+  void operateHead(ros::Publisher &publisher, const std::vector<double> &positions, ros::Duration &duration)
+  {
+    std::vector<std::string> joint_names {"head_pan_joint", "head_tilt_joint"};
+    
+    trajectory_msgs::JointTrajectoryPoint point;
+    point.positions = positions;
+    point.time_from_start = duration;
+
+    trajectory_msgs::JointTrajectory joint_trajectory;
+    joint_trajectory.joint_names = joint_names;
+    joint_trajectory.points.push_back(point);
+    publisher.publish(joint_trajectory);
+  }
+
   void operateHand(ros::Publisher &publisher, bool should_grasp)
   {
     std::vector<std::string> joint_names {"hand_motor_joint"};
@@ -216,9 +254,21 @@ private:
 
 
 public:
+
+  HandymanMain(): 
+    ac_detection3D(nh_, "Detect3D", true) 
+  {
+    ROS_INFO("Waiting for Detect3D action server to start.");
+    ac_detection3D.waitForServer();
+    ROS_INFO("Action server started, sending goal.");
+
+
+    clear_octomap = nh_.serviceClient<std_srvs::Empty>("/clear_octomap");
+    clear_octomap.waitForExistence();
+  }
+
   int run(int argc, char **argv)
   {
-    ros::NodeHandle node_handle;
 
     ros::Rate loop_rate(10);
 
@@ -227,14 +277,16 @@ public:
     std::string pub_base_twist_topic_name;
     std::string pub_arm_trajectory_topic_name;
     std::string pub_gripper_trajectory_topic_name;
+    std::string pub_head_trajectory_topic_name;
     std::string sub_trajectories_topic_name;
 
-    node_handle.param<std::string>("sub_msg_to_robot_topic_name",       sub_msg_to_robot_topic_name,       "/handyman/message/to_robot");
-    node_handle.param<std::string>("pub_msg_to_moderator_topic_name",   pub_msg_to_moderator_topic_name,   "/handyman/message/to_moderator");
-    node_handle.param<std::string>("pub_base_twist_topic_name",         pub_base_twist_topic_name,         "/hsrb/command_velocity");
-    node_handle.param<std::string>("pub_arm_trajectory_topic_name",     pub_arm_trajectory_topic_name,     "/hsrb/arm_trajectory_controller/command");
-    node_handle.param<std::string>("pub_gripper_trajectory_topic_name", pub_gripper_trajectory_topic_name, "/hsrb/gripper_controller/command");
-    node_handle.param<std::string>("sub_trajectories_topic_name",       sub_trajectories_topic_name,       "/move_group/fake_controller_joint_states");
+    nh_.param<std::string>("sub_msg_to_robot_topic_name",       sub_msg_to_robot_topic_name,       "/handyman/message/to_robot");
+    nh_.param<std::string>("pub_msg_to_moderator_topic_name",   pub_msg_to_moderator_topic_name,   "/handyman/message/to_moderator");
+    nh_.param<std::string>("pub_base_twist_topic_name",         pub_base_twist_topic_name,         "/hsrb/command_velocity");
+    nh_.param<std::string>("pub_arm_trajectory_topic_name",     pub_arm_trajectory_topic_name,     "/hsrb/arm_trajectory_controller/command");
+    nh_.param<std::string>("pub_gripper_trajectory_topic_name", pub_gripper_trajectory_topic_name, "/hsrb/gripper_controller/command");
+    nh_.param<std::string>("pub_head_trajectory_topic_name",    pub_head_trajectory_topic_name,    "/hsrb/head_trajectory_controller/command");
+    nh_.param<std::string>("sub_trajectories_topic_name",       sub_trajectories_topic_name,       "/move_group/fake_controller_joint_states");
 
     init();
 
@@ -242,12 +294,13 @@ public:
 
     ROS_INFO("Handyman start!");
 
-    ros::Subscriber sub_msg                = node_handle.subscribe<handyman::HandymanMsg>(sub_msg_to_robot_topic_name, 100, &HandymanMain::messageCallback, this);
-    ros::Publisher  pub_msg                = node_handle.advertise<handyman::HandymanMsg>(pub_msg_to_moderator_topic_name, 10);
-    ros::Publisher  pub_base_twist         = node_handle.advertise<geometry_msgs::Twist>            (pub_base_twist_topic_name, 10);
-    pub_arm_trajectory     = node_handle.advertise<trajectory_msgs::JointTrajectory>(pub_arm_trajectory_topic_name, 10);
-    pub_gripper_trajectory = node_handle.advertise<trajectory_msgs::JointTrajectory>(pub_gripper_trajectory_topic_name, 10);   
-    ros::Subscriber sub_trajectories       = node_handle.subscribe<sensor_msgs::JointState>(sub_trajectories_topic_name, 100, &HandymanMain::trajectoriesCallback, this);
+    ros::Subscriber sub_msg                = nh_.subscribe<handyman::HandymanMsg>(sub_msg_to_robot_topic_name, 100, &HandymanMain::messageCallback, this);
+    ros::Publisher  pub_msg                = nh_.advertise<handyman::HandymanMsg>(pub_msg_to_moderator_topic_name, 10);
+    ros::Publisher  pub_base_twist         = nh_.advertise<geometry_msgs::Twist>            (pub_base_twist_topic_name, 10);
+    pub_arm_trajectory     = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_arm_trajectory_topic_name, 10);
+    pub_gripper_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_gripper_trajectory_topic_name, 10);   
+    pub_head_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_head_trajectory_topic_name, 10);   
+    ros::Subscriber sub_trajectories       = nh_.subscribe<sensor_msgs::JointState>(sub_trajectories_topic_name, 100, &HandymanMain::trajectoriesCallback, this);
 
     tf::TransformListener tf_listener;
 
@@ -277,8 +330,13 @@ public:
             
             // Set Unity Arm to Default Position.
             pub_arm_trajectory.publish(arm_joint_trajectory_);
-            ros::Duration(1).sleep();
-    
+            // Set Unity Head to Default Position.
+            initHead();
+
+            ros::Duration(2).sleep();
+            std_srvs::Empty emptyCall;
+            clear_octomap.call(emptyCall);
+
             sendMessage(pub_msg, MSG_I_AM_READY);
 
             ROS_INFO("Task start!");
