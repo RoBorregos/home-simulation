@@ -37,6 +37,17 @@
     <group_state name="hand_close" group="hand">
         <joint name="hand_motor_joint" value="0"/>
     </group_state>
+    <group_state name="arm_vision" group="arm">
+        <joint name="arm_flex_joint" value="0"/>
+        <joint name="arm_lift_joint" value="0"/>
+        <joint name="arm_roll_joint" value="1.5708"/>
+        <joint name="wrist_flex_joint" value="-1.5708"/>
+        <joint name="wrist_roll_joint" value="0"/>
+    </group_state>
+    <group_state name="head_vision" group="head">
+        <joint name="head_pan_joint" value="-0.5663"/>
+        <joint name="head_tilt_joint" value="-0.8887"/>
+    </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="hand" parent_link="wrist_roll_link" group="hand"/>
     <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->
