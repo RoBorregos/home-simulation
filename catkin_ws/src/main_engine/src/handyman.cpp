@@ -14,6 +14,27 @@
 using namespace object_detector;
 typedef actionlib::SimpleActionClient<DetectObjects3DAction> Detect3DClient;
 
+namespace Detect3DCb{
+  // Called once when the goal completes
+  void doneCb(const actionlib::SimpleClientGoalState& state,
+              const DetectObjects3DResultConstPtr& result)
+  {
+    ROS_INFO("Detect3D - Finished in state [%s]", state.toString().c_str());
+  }
+
+  // Called once when the goal becomes active
+  void activeCb()
+  {
+    ROS_INFO("Detect3D - Goal just went active");
+  }
+
+  // Called every time feedback is received for the goal
+  void feedbackCb(const DetectObjects3DFeedbackConstPtr& feedback)
+  {
+    ROS_INFO("Detect3D - Got Feedback");
+  }
+}
+
 class HandymanMain
 {
 private:
@@ -252,7 +273,6 @@ private:
     publisher.publish(joint_trajectory);
   }
 
-
 public:
 
   HandymanMain(): 
@@ -351,6 +371,8 @@ public:
           {
             ROS_INFO("%s", instruction_msg_.c_str());
 
+            DetectObjects3DGoal goal;
+            ac_detection3D.sendGoal(goal, &Detect3DCb::doneCb, &Detect3DCb::activeCb, &Detect3DCb::feedbackCb);
             // TODO: HANDLE INSTRUCTION
 
             step_++;

@@ -3,7 +3,6 @@
 #include <sensor_msgs/point_cloud2_iterator.h>
 #include <shape_msgs/Mesh.h>
 #include <shape_msgs/MeshTriangle.h>
-#include <geometry_msgs/Point.h>
 #include <pcl/io/auto_io.h>
 #include <pcl/io/obj_io.h>
 #include <pcl/io/pcd_io.h>
@@ -22,12 +21,20 @@
 #include <pcl_ros/transforms.h>
 
 #include <object_detector/objectDetectionArray.h>
+
+#include <gpd_ros/CloudSamples.h>
+#include <gpd_ros/CloudSources.h>
+
 #include <actionlib/server/simple_action_server.h>
 #include <object_detector/DetectObjects3DAction.h>
 
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <moveit_msgs/CollisionObject.h>
 
+
+#include <std_msgs/Int64.h>
+
+#include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/Quaternion.h>
 
@@ -38,12 +45,14 @@
 #include <math.h>
 #include <limits>
 
-#define CAMERA_FRAME "camera_depth_frame"
+#define CAMERA_FRAME "head_rgbd_sensor_depth_frame"
 
 struct ObjectParams
 {
   /* PointCloud Cluster. */
   pcl::PointCloud<pcl::PointXYZ>::Ptr cluster;
+  /* PointCloud Cluster Original. */
+  pcl::PointCloud<pcl::PointXYZ> cluster_original;
   /* Mesh. */
   shape_msgs::Mesh::Ptr mesh;
   /* Center point of the Cluster. */
@@ -82,7 +91,11 @@ class Detect3D
   object_detector::DetectObjects3DFeedback feedback_;
   object_detector::DetectObjects3DResult result_;
   ros::Publisher pose_pub_;
+  ros::Publisher gdp_pub_;
   geometry_msgs::PoseArray pose_pub_msg_;
+  gpd_ros::CloudSamples gdp_pub_msg_;
+  ros::Publisher pc_pub_1_;
+  ros::Publisher pc_pub_2_;
 public:
   Detect3D() :
     listener_(buffer_),
@@ -91,6 +104,9 @@ public:
     tf_listener = new tf::TransformListener();
     as_.start();
     pose_pub_ = nh_.advertise<geometry_msgs::PoseArray>("/test/objectposes", 10);
+    gdp_pub_ = nh_.advertise<gpd_ros::CloudSamples>("/cloud_stitched", 10);
+    pc_pub_1_ = nh_.advertise<sensor_msgs::PointCloud2>("/test_pc_1", 10);
+    pc_pub_2_ = nh_.advertise<sensor_msgs::PointCloud2>("/test_pc_2", 10);
     ROS_INFO_STREAM("Action Server Detect3D - Initialized");
   }
 
@@ -109,6 +125,9 @@ public:
     result_.width_plane = 0;
     result_.height_plane = 0;
     pose_pub_msg_.poses.clear();
+
+    gdp_pub_msg_.cloud_sources = gpd_ros::CloudSources();
+    gdp_pub_msg_.samples.clear();
 
     if (as_.isPreemptRequested() || !ros::ok())
     {
@@ -305,6 +324,7 @@ public:
     tf_to_cam = buffer_.lookupTransform(CAMERA_FRAME, "map", ros::Time(0), ros::Duration(1.0));
     tf2::doTransform(object_found.center, object_found.center_cam, tf_to_cam);
 
+    object_found.cluster_original = *cloud;
     // Change point cloud origin to object centroid and save it.
     for (auto &point : cloud->points)
     {
@@ -484,14 +504,57 @@ public:
 
   }
 
+  void findGrasps(const sensor_msgs::PointCloud2& input, const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, std::vector<ObjectParams> &objects) {
+    sensor_msgs::PointCloud2 tmp;
+    pcl::toROSMsg(objects[0].cluster_original, tmp);
+    tmp.header.frame_id = input.header.frame_id;
+    tmp.header.stamp = input.header.stamp;;
+    pc_pub_1_.publish(tmp);
+    pc_pub_2_.publish(input);
+    
+    // Cloud Sources
+    gpd_ros::CloudSources cloud_sources;
+    cloud_sources.cloud = input;
+    std_msgs::Int64 tmpInt; tmpInt.data = 0;
+    cloud_sources.camera_source.assign(cloud->points.size(), tmpInt);
+
+    geometry_msgs::TransformStamped tf_to_cam;
+    tf_to_cam = buffer_.lookupTransform("map", CAMERA_FRAME, ros::Time(0), ros::Duration(1.0));
+    geometry_msgs::Point tmpPoint;
+    tmpPoint.x = tf_to_cam.transform.translation.x;
+    tmpPoint.y = tf_to_cam.transform.translation.y;
+    tmpPoint.z = tf_to_cam.transform.translation.z;
+    cloud_sources.view_points.push_back(tmpPoint);
+
+    gdp_pub_msg_.cloud_sources = cloud_sources;
+
+    ROS_INFO_STREAM("Finding Grasps");
+    // Samples
+    for(auto &object : objects) {
+      gdp_pub_msg_.samples.clear();
+      for (auto &point : object.cluster_original.points)
+      {
+        tmpPoint.x = point.x;
+        tmpPoint.y = point.y;
+        tmpPoint.z = point.z;
+        gdp_pub_msg_.samples.push_back(tmpPoint);
+      }
+      gdp_pub_.publish(gdp_pub_msg_);
+      ROS_INFO_STREAM("Object sended to GDP");
+      break; // TO-DO: handle multiple.
+    }
+  }
+
   /** \brief PointCloud callback. */
   void cloudCB(const sensor_msgs::PointCloud2& input)
   {
     // Get cloud ready
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_original(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal>);
     pcl::PointIndices::Ptr inliers_plane(new pcl::PointIndices); // Indices that correspond to a plane.
     pcl::fromROSMsg(input, *cloud);
+    pcl::fromROSMsg(input, *cloud_original);
     passThroughFilter(cloud);
     computeNormals(cloud, cloud_normals);
 
@@ -502,6 +565,7 @@ public:
       tableRemoved = removeBiggestPlane(cloud, inliers_plane, table_params);
       extractNormals(cloud_normals, inliers_plane);
     }
+    // TO-DO Remove Other Planes.
 
     if (cloud->points.empty()) {
       return;
@@ -519,6 +583,8 @@ public:
     }
 
     bindDetections(objects);
+
+    findGrasps(input, cloud_original, objects);
 
     for(int i=0;i < clustersFound; i++) {
       pcl::io::savePCDFile("pcl_object_"+std::to_string(i)+".pcd", *clusters[i]);
@@ -548,6 +614,10 @@ public:
       for (std::vector<int>::const_iterator pit = it->indices.begin(); pit != it->indices.end(); ++pit)
         cloud_cluster->points.push_back(cloud->points[*pit]); //*
 
+      // Discard Noise
+      if (cloud_cluster->points.size() < 1000){
+        continue; 
+      }
       cloud_cluster->width = cloud_cluster->points.size();
       cloud_cluster->height = 1;
       cloud_cluster->is_dense = true;

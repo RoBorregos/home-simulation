@@ -31,6 +31,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_eigen
   tf2_geometry_msgs
   laser_geometry
+  gpd_ros
 )
 
 ## System dependencies are found with CMake's conventions
@@ -172,7 +173,7 @@ add_executable(Detection3D src/Detection3D.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(Detection3D object_detector_generate_messages_cpp)
+add_dependencies(Detection3D object_detector_generate_messages_cpp gpd_ros_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(Detection3D ${catkin_LIBRARIES})

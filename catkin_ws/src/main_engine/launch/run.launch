@@ -40,4 +40,37 @@
   <include file="$(find hsr_moveit_config)/launch/demo.launch" > 
 	</include>
 
+	<!-- Detection3D -->
+	<node 
+        pkg="tf" 
+        type="static_transform_publisher" 
+        name="odom_broadcaster" 
+        args="0 0 0 0 0 0 1 map odom 20" 
+    />
+	<node name="Detection3D" pkg="object_detector" type="Detection3D" respawn="true" output="screen">
+		<remap from="/camera/depth/points" to="/hsrb/head_rgbd_sensor/depth_registered/points"/>
+	</node>
+
+	<!-- GDP -->
+	<node name="detect_grasps" pkg="gpd_ros" type="detect_grasps" output="screen">
+
+    <!-- If sequential importance sampling is used (default: false) -->
+		<!--
+				<param name="use_importance_sampling" value="false" />
+		-->
+
+    <!-- What type of point cloud is used and what ROS topic it comes from -->
+    <param name="cloud_type" value="2" /> <!-- 0: PointCloud2, 1: CloudIndexed, 2: CloudSamples -->
+    <param name="cloud_topic" value="/cloud_stitched" />
+
+    <!-- (optional) The ROS topic that the samples come from (default: an empty string) -->
+    <param name="samples_topic" value="" />
+
+    <!-- Filepath to the configuration file for GPD -->
+    <param name="config_file" value="/media/jose/BAA21AD5A21A95CB/Roborregos/IROS/lib/gpd/cfg/ros_eigen_params.cfg" />
+
+    <param name="rviz_topic" value="plot_grasps" />
+
+  </node>
+
 </launch>
