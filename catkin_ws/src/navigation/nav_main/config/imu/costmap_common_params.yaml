@@ -1,4 +1,5 @@
-footprint: [[-0.3, -0.3], [-0.3, 0.3],[0.3, 0.3], [0.3, -0.3]]
+# footprint: [[-0.3, -0.3], [-0.3, 0.3],[0.3, 0.3], [0.3, -0.3]]
+footprint: [[-0.085, -0.20], [-0.085, 0.2],[0.315, 0.2], [0.315, -0.2]]
 #robot_radius: 0.30
 
 
@@ -28,8 +29,8 @@ obstacle_layer:
     marking: true
     clearing: true
     expected_update_rate: 0
-    min_obstacle_height: 0.21
-    max_obstacle_height: 0.30
+    min_obstacle_height: 0.01
+    max_obstacle_height: 0.1
     
 inflation_layer:
   enabled:              true
