@@ -5,9 +5,9 @@
     <rosparam file="$(find nav_main)/config/imu/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find nav_main)/config/imu/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find nav_main)/config/imu/base_global_planner_param.yaml" command="load" />
-
     <rosparam file="$(find nav_main)/config/imu/teb_local_planner_params.yaml" command="load" />
     <rosparam file="$(find nav_main)/config/imu/move_base_params.yaml" command="load" />
+    <remap from="cmd_vel" to="hsrb/command_velocity" />
 <!--
      <param name="base_global_planner" value="global_planner/GlobalPlanner"/> 
      <param name="planner_frequency" value="1.0" />
