@@ -10,15 +10,20 @@
 #include <nodelet/nodelet.h>
 #include <actionlib/client/simple_action_client.h>
 #include <object_detector/DetectObjects3DAction.h>
+#include <pick_and_place/PickAndPlaceAction.h>
 
 using namespace object_detector;
+using namespace pick_and_place;
 typedef actionlib::SimpleActionClient<DetectObjects3DAction> Detect3DClient;
+typedef actionlib::SimpleActionClient<PickAndPlaceAction> PickAndPlaceClient;
 
 namespace Detect3DCb{
+  static bool active = true;
   // Called once when the goal completes
   void doneCb(const actionlib::SimpleClientGoalState& state,
               const DetectObjects3DResultConstPtr& result)
   {
+    Detect3DCb::active = false;
     ROS_INFO("Detect3D - Finished in state [%s]", state.toString().c_str());
   }
 
@@ -34,6 +39,50 @@ namespace Detect3DCb{
     ROS_INFO("Detect3D - Got Feedback");
   }
 }
+
+namespace PickCb{
+  // Called once when the goal completes
+  void doneCb(const actionlib::SimpleClientGoalState& state,
+              const PickAndPlaceResultConstPtr& result)
+  {
+    ROS_INFO("Pick - Finished in state [%s]", state.toString().c_str());
+  }
+
+  // Called once when the goal becomes active
+  void activeCb()
+  {
+    ROS_INFO("Pick - Goal just went active");
+  }
+
+  // Called every time feedback is received for the goal
+  void feedbackCb(const PickAndPlaceFeedbackConstPtr& feedback)
+  {
+    ROS_INFO("Pick - Got Feedback");
+  }
+}
+
+namespace PlaceCb{
+  // Called once when the goal completes
+  void doneCb(const actionlib::SimpleClientGoalState& state,
+              const PickAndPlaceResultConstPtr& result)
+  {
+    ROS_INFO("Place - Finished in state [%s]", state.toString().c_str());
+  }
+
+  // Called once when the goal becomes active
+  void activeCb()
+  {
+    ROS_INFO("Place - Goal just went active");
+  }
+
+  // Called every time feedback is received for the goal
+  void feedbackCb(const PickAndPlaceFeedbackConstPtr& feedback)
+  {
+    ROS_INFO("Place - Got Feedback");
+  }
+}
+
+
 
 class HandymanMain
 {
@@ -83,6 +132,8 @@ private:
 
   ros::NodeHandle nh_;
   Detect3DClient ac_detection3D; 
+  PickAndPlaceClient ac_pick;
+  PickAndPlaceClient ac_place;
 
   void init()
   {
@@ -276,15 +327,23 @@ private:
 public:
 
   HandymanMain(): 
-    ac_detection3D(nh_, "Detect3D", true) 
+    ac_detection3D(nh_, "Detect3D", true),
+    ac_pick(nh_, "/pickup_pose", true),
+    ac_place(nh_, "/place_pose", true)
   {
     ROS_INFO("Waiting for Detect3D action server to start.");
     ac_detection3D.waitForServer();
-    ROS_INFO("Action server started, sending goal.");
+    ROS_INFO("Waiting for Pick action server to start.");
+    ac_pick.waitForServer();
+    ROS_INFO("Waiting for Place action server to start.");
+    ac_place.waitForServer();
 
-
+    ROS_INFO("Waiting for Clear Octomap service to start.");
     clear_octomap = nh_.serviceClient<std_srvs::Empty>("/clear_octomap");
     clear_octomap.waitForExistence();
+
+    ROS_INFO("Ready!");
+
   }
 
   int run(int argc, char **argv)
@@ -371,8 +430,34 @@ public:
           {
             ROS_INFO("%s", instruction_msg_.c_str());
 
-            DetectObjects3DGoal goal;
-            ac_detection3D.sendGoal(goal, &Detect3DCb::doneCb, &Detect3DCb::activeCb, &Detect3DCb::feedbackCb);
+
+            boost::shared_ptr<gpd_ros::GraspConfigList const> grasps;
+            while(true){
+              DetectObjects3DGoal goal;
+              ROS_INFO("Executing 3D Vision");
+              Detect3DCb::active = true;
+              ac_detection3D.sendGoal(goal, &Detect3DCb::doneCb, &Detect3DCb::activeCb, &Detect3DCb::feedbackCb);
+              while(!Detect3DCb::active) {
+                loop_rate.sleep();
+                continue;
+              }
+              grasps = ros::topic::waitForMessage<gpd_ros::GraspConfigList>("/detect_grasps/clustered_grasps", nh_, ros::Duration(10.0));
+              if (grasps != nullptr) {
+                ROS_INFO_STREAM("Received grasps: " << grasps->grasps.size());
+                PickAndPlaceGoal goalPick;
+                goalPick.grasp_config_list = *grasps;
+                goalPick.object_name = "object-0";
+                goalPick.allow_contact_with = {"<octomap>"}; // TODO: Add table.
+                while(true) {            
+                  ros::Duration(10).sleep();
+                  ac_pick.sendGoal(goalPick, &PickCb::doneCb, &PickCb::activeCb, &PickCb::feedbackCb);
+                }
+                break;
+              } else {
+                ROS_INFO_STREAM("No grasps received");
+              }
+            } 
+
             // TODO: HANDLE INSTRUCTION
 
             step_++;

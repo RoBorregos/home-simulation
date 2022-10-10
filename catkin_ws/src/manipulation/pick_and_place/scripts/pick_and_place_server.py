@@ -76,15 +76,15 @@ def createPlaceGoal(place_locations,
 # Function to convert from GPD to MoveIt
 def gpd_to_moveit(grasp_config_list):
     header = Header()
-    msg.grasp_pose.header.frame_id = "base_footprint"
+    header.frame_id = "map"
     approach_distance = 0.1
     eef_yaw_offset = 0.78
     eef_offset = 0.154 # M_PI / 4;
-    table_height = 0.1
+    table_height = 0.489854
     object_height_min = 0.028
     kThresholdScore = 1.0
     res = []
-    for grasp_config in grasp_config_list:
+    for grasp_config in grasp_config_list.grasps:
         msg = Grasp()
         msg.grasp_pose.header = header
         # TODO: Use kThresholdScore according to this.
@@ -92,13 +92,13 @@ def gpd_to_moveit(grasp_config_list):
 
         offset = eef_offset
         # Make sure a distance of 'object_height_min/2' from tabletop to fingertip.
-        offset += (table_height + object_height_min / 2) - grasp_config.top.z
+        offset += (table_height + object_height_min / 2) - grasp_config.position.z
         rospy.loginfo("offset is %f", offset)
 
         # Set grasp position, translation from hand-base to the parent-link of EEF
-        msg.grasp_pose.pose.position.x = grasp_config.bottom.x - grasp_config.approach.x * offset
-        msg.grasp_pose.pose.position.y = grasp_config.bottom.y - grasp_config.approach.y * offset
-        msg.grasp_pose.pose.position.z = grasp_config.bottom.z - grasp_config.approach.z * offset
+        msg.grasp_pose.pose.position.x = grasp_config.sample.x - grasp_config.approach.x * offset
+        msg.grasp_pose.pose.position.y = grasp_config.sample.y - grasp_config.approach.y * offset
+        msg.grasp_pose.pose.position.z = grasp_config.sample.z - grasp_config.approach.z * offset
 
         # Rotation Matrix
         rot = numpy.array([[grasp_config.binormal.x, grasp_config.axis.x, grasp_config.approach.x],
@@ -117,7 +117,7 @@ def gpd_to_moveit(grasp_config_list):
         msg.grasp_pose.pose.orientation.y = quat[1]
         msg.grasp_pose.pose.orientation.z = quat[2]
         msg.grasp_pose.pose.orientation.w = quat[3]
-        rospy.loginfo("*** MoveIt pick pose/tool0 " + msg.grasp_pose)
+        #rospy.loginfo("*** MoveIt pick pose/tool0 ")
 
         # Set pre-grasp approach
         msg.pre_grasp_approach.direction.header = header
