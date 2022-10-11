@@ -20,9 +20,6 @@
 [submodule "catkin_ws/src/hsr_meshes"]
 	path = catkin_ws/src/hsr_meshes
 	url = https://github.com/ToyotaResearchInstitute/hsr_meshes.git
-[submodule "catkin_ws/src/navigation/hector_slam"]
-	path = catkin_ws/src/navigation/hector_slam
-	url = https://github.com/tu-darmstadt-ros-pkg/hector_slam.git
 [submodule "catkin_ws/src/manipulation/gpd_ros"]
 	path = catkin_ws/src/manipulation/gpd_ros
 	url = https://github.com/atenpas/gpd_ros.git
