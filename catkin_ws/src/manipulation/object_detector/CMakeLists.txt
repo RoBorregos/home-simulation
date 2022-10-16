@@ -94,6 +94,8 @@ generate_messages(
   geometry_msgs
   shape_msgs
   std_msgs
+  gpd_ros
+  object_detector
 )
 
 ################################################

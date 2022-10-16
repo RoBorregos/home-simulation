@@ -79,6 +79,8 @@ struct ObjectParams
   double max_y;
   /* Detection Label. */
   int label = -1;
+  /* Valid Object. */
+  bool isValid = false;
 };
 
 class Detect3D
@@ -89,13 +91,14 @@ class Detect3D
   actionlib::SimpleActionServer<object_detector::DetectObjects3DAction> as_;
   object_detector::DetectObjects3DFeedback feedback_;
   object_detector::DetectObjects3DResult result_;
+  object_detector::objectDetection force_object_;
   ros::Publisher pose_pub_;
-  ros::Publisher gpd_pub_;
   geometry_msgs::PoseArray pose_pub_msg_;
-  gpd_ros::CloudSamples gpd_pub_msg_;
+  gpd_ros::CloudSamples gpd_msg_;
   ros::Publisher pc_pub_1_;
   ros::Publisher pc_pub_2_;
   ros::ServiceClient clear_octomap;
+  bool biggest_object_;
 public:
   Detect3D() :
     listener_(buffer_),
@@ -104,7 +107,6 @@ public:
     tf_listener = new tf::TransformListener();
     as_.start();
     pose_pub_ = nh_.advertise<geometry_msgs::PoseArray>("/test/objectposes", 10);
-    gpd_pub_ = nh_.advertise<gpd_ros::CloudSamples>("/cloud_stitched", 10);
     pc_pub_1_ = nh_.advertise<sensor_msgs::PointCloud2>("/test_pc_1", 10);
     pc_pub_2_ = nh_.advertise<sensor_msgs::PointCloud2>("/test_pc_2", 10);
     ROS_INFO("Waiting for Clear Octomap service to start.");
@@ -117,11 +119,11 @@ public:
   void handleActionServer(const object_detector::DetectObjects3DGoalConstPtr &goal)
   {
     ROS_INFO_STREAM("Action Server Detect3D - Goal Received");
+    biggest_object_ = goal->force_object.detections.size() == 0;
+    force_object_ = !biggest_object_ ? goal->force_object.detections[0] : object_detector::objectDetection();
     feedback_.status = 0;
-    result_.objects_found = 0;
-    result_.objects_poses.clear();
-    result_.objects_names.clear();
-    result_.objects_ids.clear();
+    result_.object_cloud = gpd_ros::CloudSamples();
+    result_.object_pose = geometry_msgs::PoseStamped();
     result_.x_plane = 0;
     result_.y_plane = 0;
     result_.z_plane = 0;
@@ -129,8 +131,8 @@ public:
     result_.height_plane = 0;
     pose_pub_msg_.poses.clear();
 
-    gpd_pub_msg_.cloud_sources = gpd_ros::CloudSources();
-    gpd_pub_msg_.samples.clear();
+    gpd_msg_.cloud_sources = gpd_ros::CloudSources();
+    gpd_msg_.samples.clear();
 
     if (as_.isPreemptRequested() || !ros::ok())
     {
@@ -153,7 +155,7 @@ public:
   }
 
   /** \brief Given the parameters of the object add it to the planning scene. */
-  void addObject(std::string id, const ObjectParams& object_found, const ObjectParams &table_params, bool checkTable = true)
+  void addObject(std::string id, ObjectParams& object_found, bool checkTable = true)
   {
     // Adding Object to Planning Scene
     moveit_msgs::CollisionObject collision_object;
@@ -163,31 +165,22 @@ public:
     geometry_msgs::PoseStamped object_pose;
     object_pose.header.stamp = ros::Time::now();
     object_pose.header.frame_id = "map";
-    object_pose.pose.position = object_found.center.pose.position;
-    object_pose.pose.orientation = object_found.center.pose.orientation;
-
-    // Add object only if is above table.
-    if (checkTable && object_pose.pose.position.z < table_params.min_z) {
-      return;
-    }
-
+    object_pose.pose = object_found.center.pose;
+    
     collision_object.meshes.push_back(*object_found.mesh);
     collision_object.mesh_poses.push_back(object_pose.pose);
     collision_object.operation = collision_object.ADD;
     planning_scene_interface_.applyCollisionObject(collision_object);
 
-    result_.objects_found++;
     pose_pub_msg_.header = object_pose.header;
     pose_pub_msg_.poses.push_back(object_pose.pose);
-    result_.objects_poses.push_back(object_pose);
-    result_.objects_names.push_back(collision_object.id);
-    result_.objects_ids.push_back(object_found.label);
+    result_.object_pose = object_pose;
   }
 
   /** \brief Given the parameters of the plane add it to the planning scene. */
   bool addPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, const pcl::ModelCoefficients::Ptr& coefficients_plane, ObjectParams &plane_params)
   {
-    extractObjectDetails(cloud, plane_params, false);
+    extractObjectDetails(cloud, plane_params, plane_params, false);
 
     // Z conditions to know if it is the Table.
     if (plane_params.max_z - plane_params.min_z > 0.1) { // Diff > 10cm, Not Parallel Plane 
@@ -329,7 +322,7 @@ public:
   /** \brief Given the pointcloud containing just the object,
       compute its center point, its height and its mesh and store in object_found.
       @param cloud - point cloud containing just the object. */
-  void extractObjectDetails(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, ObjectParams& object_found, bool getMesh = true)
+  void extractObjectDetails(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, ObjectParams& object_found, const ObjectParams &table_params, bool isCluster = true)
   {
     ROS_INFO_STREAM("Extracting Object Details " << cloud->points.size());
     double max_z_ = cloud->points[0].z;
@@ -372,19 +365,52 @@ public:
     tf_to_cam = buffer_.lookupTransform(CAMERA_FRAME, "map", ros::Time(0), ros::Duration(1.0));
     tf2::doTransform(object_found.center, object_found.center_cam, tf_to_cam);
 
-    object_found.cluster_original = *cloud;
-    // Change point cloud origin to object centroid and save it.
-    for (auto &point : cloud->points)
-    {
-      point.x = point.x - centroid.x;
-      point.y = point.y - centroid.y;
-      point.z = point.z - centroid.z;
-    }
-    object_found.cluster = cloud;
-    
-    // Store mesh.
-    if (getMesh) {
+    if (isCluster) {
+      object_found.isValid = true;
+      // Add object only if is above table.
+      if (object_found.center.pose.position.z < table_params.min_z - 0.025) {
+        ROS_INFO_STREAM("Object rejected due to table height: "
+              << " x: " << object_found.center.pose.position.x
+              << " y: " << object_found.center.pose.position.y
+              << " z: " << object_found.center.pose.position.z
+              << " Tz: " << table_params.min_z);
+        object_found.isValid = false;
+        return;
+      }
+
+      ROS_INFO_STREAM("Object dimensions: "
+        << " " << abs(object_found.max_x - object_found.min_x)
+        << " " << abs(object_found.max_y - object_found.min_y)
+        << " " << abs(object_found.max_z - object_found.min_z));
+
+      // Add object only if it has restricted dimensions.
+      if (abs(object_found.max_x - object_found.min_x) > 0.5 ||
+        abs(object_found.max_y - object_found.min_y) > 0.5 ||
+        abs(object_found.max_z - object_found.min_z) > 0.5) {
+        ROS_INFO_STREAM("Object rejected due to dimensions.");
+        object_found.isValid = false;
+        return;
+      }
+
+      object_found.cluster_original = *cloud;
+      // Change point cloud origin to object centroid and save it.
+      for (auto &point : cloud->points)
+      {
+        point.x = point.x - centroid.x;
+        point.y = point.y - centroid.y;
+        point.z = point.z - centroid.z;
+      }
+      object_found.cluster = cloud;
+      
+      // Store mesh.
+      ROS_INFO_STREAM("Reconstructing Mesh Started");
       reconstructMesh(cloud, object_found.mesh);
+      ROS_INFO_STREAM("Reconstructing Mesh Ended");
+
+      if (object_found.mesh == nullptr || object_found.mesh->triangles.size() == 0 || object_found.mesh->vertices.size() == 0) {
+        ROS_INFO_STREAM("Object rejected due to invalid mesh.");
+        object_found.isValid = false;
+      }      
     }
   }
 
@@ -476,48 +502,29 @@ public:
   }
 
   /** \brief Bind an object mesh with a 2D detection using distance between two points. */
-  void bindDetections(std::vector<ObjectParams> &objects) {
-    // Get the best of three different detections.
-    boost::shared_ptr<object_detector::objectDetectionArray const> input_detections = ros::topic::waitForMessage<object_detector::objectDetectionArray>("/detections", nh_, ros::Duration(2.5));
-    boost::shared_ptr<object_detector::objectDetectionArray const> input_detections2 = ros::topic::waitForMessage<object_detector::objectDetectionArray>("/detections", nh_, ros::Duration(2.5));
-    boost::shared_ptr<object_detector::objectDetectionArray const> input_detections3 = ros::topic::waitForMessage<object_detector::objectDetectionArray>("/detections", nh_, ros::Duration(2));
-    if (!input_detections) {
-      input_detections = input_detections2;
-    }
-    if (!input_detections) {
-      input_detections = input_detections3;
-    }
-    if (!input_detections) {
-      return;
-    }
-    input_detections = input_detections->detections.size() < input_detections2->detections.size() ? input_detections2 : input_detections;
-    input_detections = input_detections->detections.size() < input_detections3->detections.size() ? input_detections3 : input_detections;
-
-    int n_detections = input_detections->detections.size();
-    
-    for(int i=0;i<n_detections;i++) {
-      float min_distance = std::numeric_limits<float>::max();
-      int min_index = -1;
-      for(int j=0;j<objects.size();j++) {
-        float curr_distance = getDistance(objects[j].center_cam.pose.position, input_detections->detections[i].point3D);
-        if (curr_distance < min_distance) {
-          min_distance = curr_distance;
-          min_index = j;
-        }
-      }
-      if (min_index != -1) {
-        objects[min_index].label = input_detections->detections[i].label;
-        ROS_INFO_STREAM("Detection " << i << " binded with object " << min_index << " -> Min Distance: " << min_distance);
+  void bindDetections(std::vector<ObjectParams> &objects) {    
+    float min_distance = std::numeric_limits<float>::max();
+    int min_index = -1;
+    for(int j=0;j<objects.size();j++) {
+      float curr_distance = getDistance(objects[j].center_cam.pose.position, force_object_.point3D);
+      if (curr_distance < min_distance) {
+        min_distance = curr_distance;
+        min_index = j;
       }
     }
-
+    if (min_index != -1) {
+      objects[min_index].label = force_object_.label;
+      ROS_INFO_STREAM("Detection binded with object " << min_index << " -> Min Distance: " << min_distance);
+      objects = { objects[min_index] };
+    }
+    objects = {};
   }
 
-  void findGrasps(const sensor_msgs::PointCloud2& input, const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, std::vector<ObjectParams> &objects) {
+  void addGraspInfo(const sensor_msgs::PointCloud2& input, const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, std::vector<ObjectParams> &objects) {
     sensor_msgs::PointCloud2 tmp;
     pcl::toROSMsg(objects[0].cluster_original, tmp);
     tmp.header.frame_id = input.header.frame_id;
-    tmp.header.stamp = input.header.stamp;;
+    tmp.header.stamp = input.header.stamp;
     pc_pub_1_.publish(tmp);
     pc_pub_2_.publish(input);
     
@@ -535,22 +542,20 @@ public:
     tmpPoint.z = tf_to_cam.transform.translation.z;
     cloud_sources.view_points.push_back(tmpPoint);
 
-    gpd_pub_msg_.cloud_sources = cloud_sources;
+    gpd_msg_.cloud_sources = cloud_sources;
 
     ROS_INFO_STREAM("Finding Grasps");
     // Samples
     for(auto &object : objects) {
-      gpd_pub_msg_.samples.clear();
+      gpd_msg_.samples.clear();
       for (auto &point : object.cluster_original.points)
       {
         tmpPoint.x = point.x;
         tmpPoint.y = point.y;
         tmpPoint.z = point.z;
-        gpd_pub_msg_.samples.push_back(tmpPoint);
+        gpd_msg_.samples.push_back(tmpPoint);
       }
-      gpd_pub_.publish(gpd_pub_msg_);
-      ROS_INFO_STREAM("Object sended to GPD");
-      break; // TO-DO: handle multiple.
+      result_.object_cloud = gpd_msg_;
     }
   }
 
@@ -592,20 +597,35 @@ public:
     getClusters(cloud, clusters);
     int clustersFound = clusters.size();
 
-    std::vector<ObjectParams> objects(clustersFound);
+    std::vector<ObjectParams> objects;
     for(int i=0;i < clustersFound; i++) {
-      objects[i].mesh.reset(new shape_msgs::Mesh);
-      extractObjectDetails(clusters[i], objects[i]);
+      ObjectParams tmp;
+      tmp.mesh.reset(new shape_msgs::Mesh);
+      extractObjectDetails(clusters[i], tmp, table_params);
+      ROS_INFO_STREAM("File saved: " << "pcl_object_"+std::to_string(i)+".pcd");
+      pcl::io::savePCDFile("pcl_object_"+std::to_string(i)+".pcd", *clusters[i]);
+      if (tmp.isValid) {
+        objects.push_back(tmp);
+      }
+    }
+    ROS_INFO_STREAM("Clusters Found: " << clustersFound);
+    ROS_INFO_STREAM("Valid Objects: " << objects.size());
+
+    if (!biggest_object_) {
+      bindDetections(objects);
     }
 
-    // bindDetections(objects);
+    if (objects.size() > 1 && biggest_object_) {
+      objects = { objects[0] };
+    }
 
-    findGrasps(input, cloud_original, objects);
+    ROS_INFO_STREAM("STARTED - Building Grasping Info");
+    addGraspInfo(input, cloud_original, objects);
+    ROS_INFO_STREAM("ENDED - Building Grasping Info");
 
-    for(int i=0;i < clustersFound; i++) {
-      pcl::io::savePCDFile("pcl_object_"+std::to_string(i)+".pcd", *clusters[i]);
-      std::string id = "object-" + std::to_string(i);
-      addObject(id, objects[i], table_params, true);
+    for(int i=0;i < objects.size(); i++) {
+      std::string id = "current";
+      addObject(id, objects[i], true);
     }
   }
 
