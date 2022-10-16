@@ -27,8 +27,8 @@
     <group_state name="arm_default" group="arm">
         <joint name="arm_flex_joint" value="0"/>
         <joint name="arm_lift_joint" value="0"/>
-        <joint name="arm_roll_joint" value="0"/>
-        <joint name="wrist_flex_joint" value="0"/>
+        <joint name="arm_roll_joint" value="0.1378"/>
+        <joint name="wrist_flex_joint" value="-1.5557"/>
         <joint name="wrist_roll_joint" value="0"/>
     </group_state>
     <group_state name="hand_open" group="hand">
@@ -47,6 +47,17 @@
     <group_state name="head_vision" group="head">
         <joint name="head_pan_joint" value="-0.5663"/>
         <joint name="head_tilt_joint" value="-0.8887"/>
+    </group_state>
+    <group_state name="arm_extended" group="arm">
+        <joint name="arm_flex_joint" value="0"/>
+        <joint name="arm_lift_joint" value="0"/>
+        <joint name="arm_roll_joint" value="-0.0587"/>
+        <joint name="wrist_flex_joint" value="-0.0464"/>
+        <joint name="wrist_roll_joint" value="0.0566"/>
+    </group_state>
+    <group_state name="head_default" group="head">
+        <joint name="head_pan_joint" value="0"/>
+        <joint name="head_tilt_joint" value="0"/>
     </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
     <end_effector name="hand" parent_link="wrist_roll_link" group="hand"/>

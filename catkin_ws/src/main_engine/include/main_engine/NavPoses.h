@@ -32,16 +32,18 @@ enum PLACE {
 
 struct NavPose
 {
+  NavPose(){}
   NavPose(float px, float py, float pz, float ox, float oy, float oz, float ow){
-    p.position.x = px;
-    p.position.y = py;
-    p.position.z = pz;
-    p.orientation.x = ox;
-    p.orientation.y = oy;
-    p.orientation.z = oz;
-    p.orientation.w = ow;
+    val.header.frame_id = "map";
+    val.pose.position.x = px;
+    val.pose.position.y = py;
+    val.pose.position.z = pz;
+    val.pose.orientation.x = ox;
+    val.pose.orientation.y = oy;
+    val.pose.orientation.z = oz;
+    val.pose.orientation.w = ow;
   } 
-  geometry_msgs::Pose p;
+  geometry_msgs::PoseStamped val;
 };
 
 map<MAP, map<ROOM, map<PLACE, NavPose>>> NavPosesDict ({
@@ -49,14 +51,14 @@ map<MAP, map<ROOM, map<PLACE, NavPose>>> NavPosesDict ({
     MAP::TEST1,
     {
       {
-        ROOM::KITCHEN, {
-          {PLACE::SAFE_PLACE, NavPose(1.9607, 0.07947, 0.0, 1.67, 1.3, -0.79, 0.606)},
-          {PLACE::LOW_TABLE, NavPose(1.9607, 0.07947, 0.0, 1.67, 1.3, -0.79, 0.606)},
+        ROOM::LIVING_ROOM, {
+          {PLACE::SAFE_PLACE, NavPose(2.09310, 0.18493, 0.0, 0.0, 0.0, 0.87606, -0.48218)},
+          {PLACE::LOW_TABLE, NavPose(2.09310, 0.18493, 0.0, 0.0, 0.0, 0.87606, -0.48218)},
         }
       },
       {
         ROOM::BEDROOM, {
-          {PLACE::LOW_TABLE, NavPose(1.9607, 0.07947, 0.0, 1.67, 1.3, -0.79, 0.606)}
+          {PLACE::LOW_TABLE, NavPose(2.09310, 0.18493, 0.0, 0.0, 0.0, 0.87606, -0.48218)}
         }
       },
     }

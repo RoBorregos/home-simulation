@@ -520,9 +520,9 @@ public:
     objects = {};
   }
 
-  void addGraspInfo(const sensor_msgs::PointCloud2& input, const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, std::vector<ObjectParams> &objects) {
+  void addGraspInfo(const sensor_msgs::PointCloud2& input, const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, ObjectParams &object) {
     sensor_msgs::PointCloud2 tmp;
-    pcl::toROSMsg(objects[0].cluster_original, tmp);
+    pcl::toROSMsg(object.cluster_original, tmp);
     tmp.header.frame_id = input.header.frame_id;
     tmp.header.stamp = input.header.stamp;
     pc_pub_1_.publish(tmp);
@@ -546,17 +546,15 @@ public:
 
     ROS_INFO_STREAM("Finding Grasps");
     // Samples
-    for(auto &object : objects) {
-      gpd_msg_.samples.clear();
-      for (auto &point : object.cluster_original.points)
-      {
-        tmpPoint.x = point.x;
-        tmpPoint.y = point.y;
-        tmpPoint.z = point.z;
-        gpd_msg_.samples.push_back(tmpPoint);
-      }
-      result_.object_cloud = gpd_msg_;
+    gpd_msg_.samples.clear();
+    for (auto &point : object.cluster_original.points)
+    {
+      tmpPoint.x = point.x;
+      tmpPoint.y = point.y;
+      tmpPoint.z = point.z;
+      gpd_msg_.samples.push_back(tmpPoint);
     }
+    result_.object_cloud = gpd_msg_;
   }
 
   /** \brief PointCloud callback. */
@@ -615,18 +613,17 @@ public:
       bindDetections(objects);
     }
 
-    if (objects.size() > 1 && biggest_object_) {
-      objects = { objects[0] };
+    if (objects.size() < 1) {
+      return;
     }
+    ObjectParams selectedObject = objects[0];
 
     ROS_INFO_STREAM("STARTED - Building Grasping Info");
-    addGraspInfo(input, cloud_original, objects);
+    addGraspInfo(input, cloud_original, selectedObject);
     ROS_INFO_STREAM("ENDED - Building Grasping Info");
 
-    for(int i=0;i < objects.size(); i++) {
-      std::string id = "current";
-      addObject(id, objects[i], true);
-    }
+    std::string id = "current";
+    addObject(id, selectedObject, true);
   }
 
   /** \brief Find all clusters in a pointcloud.*/

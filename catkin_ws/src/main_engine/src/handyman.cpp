@@ -168,6 +168,7 @@ private:
 
   moveit::planning_interface::MoveGroupInterface* move_arm_;
   moveit::planning_interface::MoveGroupInterface* move_head_;
+  moveit::planning_interface::MoveGroupInterface* move_hand_;
 
   void init()
   {
@@ -314,13 +315,25 @@ private:
 
   bool moveHead(const std::vector<double> &positions){
     move_head_->setJointValueTarget(positions);
-    move_head_->setPlanningTime(0.5);
-    bool success = (move_head_->asyncMove() == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    move_head_->setPlanningTime(1.0);
+    bool success = (move_head_->move() == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     if (success) {
       ROS_INFO_STREAM("Head moved to initial position.");
       return true;
     }
     ROS_INFO_STREAM("Head movement to initial position failed.");
+    return false;
+  }
+
+  bool moveHand(const std::vector<double> &positions){
+    move_hand_->setJointValueTarget(positions);
+    move_hand_->setPlanningTime(1.0);
+    bool success = (move_hand_->move() == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    if (success) {
+      ROS_INFO_STREAM("Hand moved to initial position.");
+      return true;
+    }
+    ROS_INFO_STREAM("Hand movement to initial position failed.");
     return false;
   }
 
@@ -368,7 +381,7 @@ private:
 
     trajectory_msgs::JointTrajectoryPoint point;
     point.positions = positions;
-    point.time_from_start = ros::Duration(2);
+    point.time_from_start = ros::Duration(5);
 
     trajectory_msgs::JointTrajectory joint_trajectory;
     joint_trajectory.joint_names = joint_names;
@@ -474,6 +487,7 @@ public:
 
     moveit::planning_interface::MoveGroupInterface move_arm("arm"); move_arm_ = &move_arm;
     moveit::planning_interface::MoveGroupInterface move_head("head"); move_head_ = &move_head;
+    moveit::planning_interface::MoveGroupInterface move_hand("hand"); move_hand_ = &move_hand;
     ros::Subscriber sub_msg                = nh_.subscribe<handyman::HandymanMsg>(sub_msg_to_robot_topic_name, 100, &HandymanMain::messageCallback, this);
     ros::Publisher  pub_msg                = nh_.advertise<handyman::HandymanMsg>(pub_msg_to_moderator_topic_name, 10);
     ros::Publisher  pub_base_twist         = nh_.advertise<geometry_msgs::Twist>            (pub_base_twist_topic_name, 10);
@@ -515,13 +529,16 @@ public:
           if(is_started_)
           {
             ROS_INFO("Ready");
-            // Set Unity Arm to Default Position.
-            ROS_INFO("ARM Default Position");
-            moveArm(vector<double>({ 0.0, 0.0, 1.5708, -1.5708, 0.0 }));
             // Set Unity Head to Default Position.
             ROS_INFO("HEAD Default Position");
             moveHead(vector<double>({0.0, -0.6887}));
-            ros::Duration(2).sleep();
+            // Set Unity Hand to Default Position.
+            ROS_INFO("HAND Default Position - OPEN");
+            moveHand(vector<double>({1.0598}));
+            // Set Unity Arm to Default Position.
+            ROS_INFO("ARM Default Position");
+            moveArm(vector<double>({ 0.0, 0.0, 1.5708, -1.5708, 0.0 }));
+            // ros::Duration(2).sleep();
 
             std_srvs::Empty emptyCall;
             clear_octomap.call(emptyCall);

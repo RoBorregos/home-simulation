@@ -18,8 +18,8 @@ controller_list:
       - head_tilt_joint
 initial:  # Define initial robot poses per group
   - group: arm
-    pose: arm_vision
+    pose: arm_default
   - group: hand
     pose: hand_close
   - group: head
-    pose: head_vision
+    pose: head_default
