@@ -26,3 +26,6 @@
 [submodule "lib/gpd"]
 	path = lib/gpd
 	url = https://github.com/atenpas/gpd.git
+[submodule "catkin_ws/src/bio_ik"]
+	path = catkin_ws/src/bio_ik
+	url = https://github.com/TAMS-Group/bio_ik.git
