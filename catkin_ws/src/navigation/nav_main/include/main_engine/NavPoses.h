@@ -26,6 +26,7 @@ enum PLACE {
   LOW_TABLE,
   WAGON,
   WHITE_TABLE,
+  GLASS_TABLE,
   TRASH_BOX_FOR_RECYCLE,
   TRASH_BOX_FOR_BUMABLE,
   TRASH_BOX_FOR_BOTTLE_CAN,
@@ -57,13 +58,16 @@ map<MAP, map<ROOM, map<PLACE, NavPose>>> NavPosesDict ({
     {
       {
         ROOM::KITCHEN, {
-          {PLACE::SAFE_PLACE, NavPose(1.9607, 0.07947, 0.0, 1.67, 1.3, -0.79, 0.606)},
-          {PLACE::LOW_TABLE, NavPose(1.9607, 0.07947, 0.0, 1.67, 1.3, -0.79, 0.606)},
+          {PLACE::SAFE_PLACE, NavPose(2.83685, 3, 0.0, 0.0, 0.0, 0.6985, 0.7156)},
+          {PLACE::SEVEN, NavPose(9.1511,1.600,0.0,0.0,0.0,0.0020,0.9999)},
+          {PLACE::EIGHT, NavPose(6.0353,3.0147,0.0,0.0,0.0,-0.03849,0.9992)},
         }
       },
       {
         ROOM::BEDROOM, {
-          {PLACE::LOW_TABLE, NavPose(1.9607, 0.07947, 0.0, 1.67, 1.3, -0.79, 0.606)}
+          {PLACE::SAFE_PLACE, NavPose(5.857, -6.4535, 0.0, 0.0, 0.0, 0.19186, 0.981422)},
+          {PLACE::TEN, NavPose(8.8604,-6.2036,0.0,0.0,0.0,-0.01237,0.9999)},
+          {PLACE::ELEVEN,NavPose(9.0953,-2.7585,0.0,0.0,0.0,0.6691,0.7431)},
         }
       },
       {
@@ -74,11 +78,8 @@ map<MAP, map<ROOM, map<PLACE, NavPose>>> NavPosesDict ({
           {PLACE::TRASH_BOX_FOR_BUMABLE, NavPose(-0.5023,2.7155,0.0,0.0,0.0,0.9998,0.0192)},
           {PLACE::TRASH_BOX_FOR_RECYCLE, NavPose(-0.4096,1.25779,0.0,0.0,0.0,-0.9993,0.03544)},
           {PLACE::LOW_TABLE, NavPose(1.5211,4.2919,0.0,0.0,0.0,-0.9999,0.0085)},
-          {PLACE::SEVEN, NavPose(9.1511,1.6100,0.0,0.0,0.0,0.0020,0.9999)},
-          {PLACE::EIGHT, NavPose(6.0353,3.0147,0.0,0.0,0.0,-0.03849,0.9992)},
+          {PLACE::GLASS_TABLE, NavPose(2.836855,2.9917,0.0,0.0,0.0,0.69850643,0.7156037785)},
           {PLACE::NINE, NavPose(1.1693,-6.0187,0.0,0.0,0.0,-0.7824,0.62270)},
-          {PLACE::TEN, NavPose(8.8604,-6.2036,0.0,0.0,0.0,-0.01237,0.9999)},
-          {PLACE::ELEVEN,NavPose(9.0953,-2.7585,0.0,0.0,0.0,0.6691,0.7431)},
         }
       },
     }
