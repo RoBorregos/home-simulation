@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  nav_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -149,7 +150,9 @@ include_directories(
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-
+add_executable(changeMap src/changeMap.cpp)
+target_link_libraries(changeMap ${catkin_LIBRARIES})
+add_dependencies(changeMap ${PROJECT_NAME}_changeMap)
 #############
 ## Install ##
 #############
