@@ -1,4 +1,10 @@
 controller_list:
+  - name: fake_base_controller
+    type: $(arg fake_execution_type)
+    joints:
+      - odom_y
+      - odom_x
+      - odom_r
   - name: fake_arm_controller
     type: $(arg fake_execution_type)
     joints:
@@ -16,6 +22,17 @@ controller_list:
     joints:
       - head_pan_joint
       - head_tilt_joint
+  - name: fake_whole_body_controller
+    type: $(arg fake_execution_type)
+    joints:
+      - odom_y
+      - odom_x
+      - odom_r
+      - arm_lift_joint
+      - arm_flex_joint
+      - arm_roll_joint
+      - wrist_flex_joint
+      - wrist_roll_joint
 initial:  # Define initial robot poses per group
   - group: arm
     pose: arm_default

@@ -17,6 +17,8 @@
 #include <gpd_ros/GraspConfigList.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <main_engine/NavPoses.h>
+#include <chrono>
+#include <thread>
 
 using namespace object_detector;
 using namespace pick_and_place;
@@ -24,6 +26,11 @@ using namespace  move_base_msgs;
 typedef actionlib::SimpleActionClient<DetectObjects3DAction> Detect3DClient;
 typedef actionlib::SimpleActionClient<PickAndPlaceAction> PickAndPlaceClient;
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
+
+uint64_t timeSinceEpochMillisec() {
+  using namespace std::chrono;
+  return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
 
 namespace Detect3DCb{
   static bool active = true;
@@ -113,7 +120,14 @@ namespace MoveBaseCb{
   }
 }
 
-
+bool allTrue(std::vector<bool> values) {
+  for(auto value: values) {
+    if (value == false) {
+      return false;
+    }
+  }
+  return true;
+}
 
 class HandymanMain
 {
@@ -153,8 +167,13 @@ private:
   bool is_failed_;
 
   ros::Publisher  pub_arm_trajectory;
+  ros::Publisher  pub_base_trajectory;
   ros::Publisher  pub_gripper_trajectory;
   ros::Publisher  pub_head_trajectory;
+  ros::Publisher  pub_base_twist;
+
+  uint64_t valid_till = 0.0;
+  bool is_moving = false;
 
   // clear_octomap
   ros::ServiceClient clear_octomap;
@@ -169,6 +188,7 @@ private:
   moveit::planning_interface::MoveGroupInterface* move_arm_;
   moveit::planning_interface::MoveGroupInterface* move_head_;
   moveit::planning_interface::MoveGroupInterface* move_hand_;
+  moveit::planning_interface::MoveGroupInterface* move_all_;
 
   void init()
   {
@@ -237,18 +257,58 @@ private:
   {
     const double fake_controller_rate = 50.0; 
     ros::Duration duration(1/fake_controller_rate);
-    if (message->position.size() == 1) {
-      operateHand(pub_gripper_trajectory, message->position, duration);
-    }
-    if (message->position.size() == 2) {
-      operateHead(pub_head_trajectory, message->position, duration);
-    }
-    if (message->position.size() == 5) {
-      std::vector<double> positions = message->position;
-      std::swap(positions[0], positions[1]); // Fix Order for Unity.
-      moveArm(pub_arm_trajectory, positions, duration);
+    std::vector<std::string> arm_joint_names {"arm_lift_joint", "arm_flex_joint", "arm_roll_joint", "wrist_flex_joint", "wrist_roll_joint"};
+    std::vector<double> arm_joint_positions(arm_joint_names.size(), 0.0);
+    std::vector<bool> arm_joint_filled(arm_joint_names.size(), false);
+    std::vector<std::string> base_joint_names {"odom_r", "odom_x", "odom_y"};
+    std::vector<double> base_joint_positions(base_joint_names.size(), 0.0);
+    std::vector<bool> base_joint_filled(base_joint_names.size(), false);
+    std::vector<std::string> hand_joint_names {"hand_motor_joint", "hand_l_spring_proximal_joint", "hand_r_spring_proximal_joint"};
+    std::vector<double> hand_joint_positions(hand_joint_names.size(), 0.0);
+    std::vector<bool> hand_joint_filled(hand_joint_names.size(), false);
+    std::vector<std::string> head_joint_names {"head_pan_joint", "head_tilt_joint"};
+    std::vector<double> head_joint_positions(head_joint_names.size(), 0.0);
+    std::vector<bool> head_joint_filled(head_joint_names.size(), false);
+
+    for (int i=0;i<message->name.size();i++) {
+      for(int j=0;j<arm_joint_names.size();j++) {
+        if (arm_joint_names[j] == message->name[i]) {
+          arm_joint_positions[j] = message->position[i];
+          arm_joint_filled[j] = true;
+        }
+      }
+      for(int j=0;j<base_joint_names.size();j++) {
+        if (base_joint_names[j] == message->name[i]) {
+          base_joint_positions[j] = message->position[i];
+          base_joint_filled[j] = true;
+        }
+      }
+      for(int j=0;j<hand_joint_names.size();j++) {
+        if (hand_joint_names[j] == message->name[i]) {
+          hand_joint_positions[j] = message->position[i];
+          hand_joint_filled[j] = true;
+        }
+      }
+      for(int j=0;j<head_joint_names.size();j++) {
+        if (head_joint_names[j] == message->name[i]) {
+          head_joint_positions[j] = message->position[i];
+          head_joint_filled[j] = true;
+        }
+      }
     }
 
+    if (allTrue(hand_joint_filled)) {
+      operateHand(pub_gripper_trajectory, hand_joint_positions, hand_joint_names, duration);
+    }
+    if (allTrue(head_joint_filled)) {
+      operateHead(pub_head_trajectory, head_joint_positions, head_joint_names, duration);
+    }
+    if (allTrue(arm_joint_filled)) {
+      moveArm(pub_arm_trajectory, arm_joint_positions, arm_joint_names, duration);
+    }
+    if (allTrue(base_joint_filled)) {
+      operateBase(pub_base_trajectory, base_joint_positions);
+    }
   }
 
   void sendMessage(ros::Publisher &publisher, const std::string &message)
@@ -276,33 +336,39 @@ private:
     return tf_transform;
   }
 
-  void moveBase(ros::Publisher &publisher, double linear_x, double linear_y, double angular_z)
-  {
-    geometry_msgs::Twist twist;
-
-    twist.linear.x  = linear_x;
-    twist.linear.y  = linear_y;
-    twist.angular.z = angular_z;
-    publisher.publish(twist);
-  }
-
   void stopBase(ros::Publisher &publisher)
   {
-    moveBase(publisher, 0.0, 0.0, 0.0);
+    moveBase(publisher, 0.0, 0.0, 0.0, 1000);
+    is_moving = false;
+    valid_till = 0.0;
   }
 
-  void moveArm(ros::Publisher &publisher, const std::vector<double> &positions, ros::Duration &duration)
-  {
-    arm_joint_trajectory_.points[0].positions = positions;
-    arm_joint_trajectory_.points[0].time_from_start = duration;
+  void checkBase() {
+    ros::Rate loop_rate(10);
 
-    publisher.publish(arm_joint_trajectory_);
+    while (ros::ok())
+    {
+      if (is_moving && timeSinceEpochMillisec() > valid_till) {
+        stopBase(pub_base_twist);
+      }
+      loop_rate.sleep();
+    }
   }
 
-  void operateHand(ros::Publisher &publisher, const std::vector<double> &positions, ros::Duration &duration)
+  void moveArm(ros::Publisher &publisher, const std::vector<double> &positions, std::vector<std::string> &joint_names, ros::Duration &duration)
   {
-    std::vector<std::string> joint_names {"hand_motor_joint"};
-    
+    trajectory_msgs::JointTrajectoryPoint point;
+    point.positions = positions;
+    point.time_from_start = duration;
+
+    trajectory_msgs::JointTrajectory joint_trajectory;
+    joint_trajectory.joint_names = joint_names;
+    joint_trajectory.points.push_back(point);
+    publisher.publish(joint_trajectory);
+  }
+
+  void operateHand(ros::Publisher &publisher, const std::vector<double> &positions, std::vector<std::string> &joint_names, ros::Duration &duration)
+  {
     trajectory_msgs::JointTrajectoryPoint point;
     point.positions = positions;
     point.time_from_start = duration;
@@ -349,9 +415,30 @@ private:
     return false;
   }
 
-  void operateHead(ros::Publisher &publisher, const std::vector<double> &positions, ros::Duration &duration)
+  bool moveAll(){
+    geometry_msgs::PoseStamped position;
+    position.header.frame_id = "map";
+    position.pose.position.x = 0.5524308294591512;
+    position.pose.position.y = 0.24833975277601641;
+    position.pose.position.z = 0.7068511427706418; 
+    position.pose.orientation.x = -0.5195918821618419;
+    position.pose.orientation.y = 0.5197011721605078;
+    position.pose.orientation.z = -0.025166215400788592;
+    position.pose.orientation.w = 0.6777179570063863;
+
+    move_all_->setPoseTarget(position, "wrist_roll_link");
+    move_all_->setPlanningTime(3.0);
+    bool success = (move_all_->move() == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    if (success) {
+      ROS_INFO_STREAM("All moved to target position.");
+      return true;
+    }
+    ROS_INFO_STREAM("All movement to target position failed.");
+    return false;
+  }
+
+  void operateHead(ros::Publisher &publisher, const std::vector<double> &positions, std::vector<std::string> &joint_names, ros::Duration &duration)
   {
-    std::vector<std::string> joint_names {"head_pan_joint", "head_tilt_joint"};
     
     trajectory_msgs::JointTrajectoryPoint point;
     point.positions = positions;
@@ -362,6 +449,58 @@ private:
     joint_trajectory.points.push_back(point);
     publisher.publish(joint_trajectory);
   }
+
+  void operateBase(ros::Publisher &publisher, const std::vector<double> &positions)
+  {
+    static double last_r = 0;
+    static double last_x = 0;
+    static double last_y = 0;
+    static int64_t last_t = 0;
+
+    if (last_t == 0 || timeSinceEpochMillisec() - last_t > 500) {
+      last_r = positions[0];
+      last_x = positions[1];
+      last_y = positions[2];
+      last_t = timeSinceEpochMillisec();
+      return;
+    }
+
+    double delta_t = timeSinceEpochMillisec() - last_t;
+    double delta_r = 1000 * ((positions[0] - last_r) / delta_t);
+    double delta_x = 1000 * ((positions[1] - last_x) / delta_t);
+    double delta_y = 1000 * ((positions[2] - last_y) / delta_t);
+    
+    moveBase(pub_base_twist, delta_x, delta_y, delta_r, delta_t);
+
+    last_r = positions[0];
+    last_x = positions[1];
+    last_y = positions[2];
+    last_t = timeSinceEpochMillisec();
+    // std::vector<std::string> joint_names {"odom_r", "odom_x", "odom_y"};
+
+    // trajectory_msgs::JointTrajectoryPoint point;
+    // point.positions = positions;
+    // point.time_from_start = duration;
+
+    // trajectory_msgs::JointTrajectory joint_trajectory;
+    // joint_trajectory.joint_names = joint_names;
+    // joint_trajectory.points.push_back(point);
+    // publisher.publish(joint_trajectory);
+  }
+
+  void moveBase(ros::Publisher &publisher, double linear_x, double linear_y, double angular_z, double time_ms)
+  {
+    valid_till = timeSinceEpochMillisec() + time_ms;
+    geometry_msgs::Twist twist;
+
+    twist.linear.x  = linear_x;
+    twist.linear.y  = linear_y;
+    twist.angular.z = angular_z;
+    publisher.publish(twist);
+
+    is_moving = true;
+  }
+
 
   void operateHand(ros::Publisher &publisher, bool should_grasp)
   {
@@ -465,6 +604,7 @@ public:
     std::string pub_msg_to_moderator_topic_name;
     std::string pub_base_twist_topic_name;
     std::string pub_arm_trajectory_topic_name;
+    std::string pub_base_trajectory_topic_name;
     std::string pub_gripper_trajectory_topic_name;
     std::string pub_head_trajectory_topic_name;
     std::string sub_trajectories_topic_name;
@@ -473,6 +613,7 @@ public:
     nh_.param<std::string>("/handyman/pub_msg_to_moderator_topic_name",   pub_msg_to_moderator_topic_name,   "/handyman/message/to_moderator");
     nh_.param<std::string>("/handyman/pub_base_twist_topic_name",         pub_base_twist_topic_name,         "/hsrb/command_velocity");
     nh_.param<std::string>("/handyman/pub_arm_trajectory_topic_name",     pub_arm_trajectory_topic_name,     "/hsrb/arm_trajectory_controller/command");
+    nh_.param<std::string>("/handyman/pub_base_trajectory_topic_name",    pub_base_trajectory_topic_name,    "/hsrb/omni_base_controller/command");
     nh_.param<std::string>("/handyman/pub_gripper_trajectory_topic_name", pub_gripper_trajectory_topic_name, "/hsrb/gripper_controller/command");
     nh_.param<std::string>("/handyman/pub_head_trajectory_topic_name",    pub_head_trajectory_topic_name,    "/hsrb/head_trajectory_controller/command");
     nh_.param<std::string>("/handyman/sub_trajectories_topic_name",       sub_trajectories_topic_name,       "/move_group/fake_controller_joint_states");
@@ -488,10 +629,12 @@ public:
     moveit::planning_interface::MoveGroupInterface move_arm("arm"); move_arm_ = &move_arm;
     moveit::planning_interface::MoveGroupInterface move_head("head"); move_head_ = &move_head;
     moveit::planning_interface::MoveGroupInterface move_hand("hand"); move_hand_ = &move_hand;
+    moveit::planning_interface::MoveGroupInterface move_all("whole_body"); move_all_ = &move_all;
     ros::Subscriber sub_msg                = nh_.subscribe<handyman::HandymanMsg>(sub_msg_to_robot_topic_name, 100, &HandymanMain::messageCallback, this);
     ros::Publisher  pub_msg                = nh_.advertise<handyman::HandymanMsg>(pub_msg_to_moderator_topic_name, 10);
-    ros::Publisher  pub_base_twist         = nh_.advertise<geometry_msgs::Twist>            (pub_base_twist_topic_name, 10);
+    pub_base_twist         = nh_.advertise<geometry_msgs::Twist>            (pub_base_twist_topic_name, 10);
     pub_arm_trajectory     = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_arm_trajectory_topic_name, 10);
+    pub_base_trajectory     = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_base_trajectory_topic_name, 10);
     pub_gripper_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_gripper_trajectory_topic_name, 10);   
     pub_head_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_head_trajectory_topic_name, 10);   
     ros::Subscriber sub_trajectories       = nh_.subscribe<sensor_msgs::JointState>(sub_trajectories_topic_name, 100, &HandymanMain::trajectoriesCallback, this);
@@ -503,7 +646,7 @@ public:
 
     // Start: Temporary Added
     ROS_INFO_STREAM("Force Step: " << force_step_);
-    
+    std::thread t1(&HandymanMain::checkBase, this);
     while (ros::ok())
     {
       if(is_failed_)
@@ -529,6 +672,10 @@ public:
           if(is_started_)
           {
             ROS_INFO("Ready");
+
+            std_srvs::Empty emptyCall;
+            clear_octomap.call(emptyCall);
+
             // Set Unity Head to Default Position.
             ROS_INFO("HEAD Default Position");
             moveHead(vector<double>({0.0, -0.6887}));
@@ -538,10 +685,6 @@ public:
             // Set Unity Arm to Default Position.
             ROS_INFO("ARM Default Position");
             moveArm(vector<double>({ 0.0, 0.0, 1.5708, -1.5708, 0.0 }));
-            // ros::Duration(2).sleep();
-
-            std_srvs::Empty emptyCall;
-            clear_octomap.call(emptyCall);
 
             sendMessage(pub_msg, MSG_I_AM_READY);
 
@@ -572,6 +715,9 @@ public:
         }
         case Grasp:
         {
+          moveAll();
+          step_++;
+          break;
           DetectObjects3DGoal goal;
           ROS_INFO("Executing 3D Vision");
           Detect3DCb::active = true;
