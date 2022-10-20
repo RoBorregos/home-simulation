@@ -56,7 +56,7 @@ class PoseDetector:
             "/hsrb/head_center_camera/image_raw", Image, self.image_callback)
 
         self.posePub = rospy.Publisher(
-            "/hsrb/pose", pose_point, queue_size=10)
+            "/vision/pose", pose_point, queue_size=10)
 
     def image_callback(self, data):
         self.imageReceved = data

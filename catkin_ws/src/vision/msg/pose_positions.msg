@@ -1,0 +1,15 @@
+geometry_msgs/Point chest
+geometry_msgs/Point shoulderLeft
+geometry_msgs/Point shoulderRight
+geometry_msgs/Point elbowLeft
+geometry_msgs/Point elbowRight
+geometry_msgs/Point wristLeft
+geometry_msgs/Point wristRight
+geometry_msgs/Point handLeft
+geometry_msgs/Point handRight
+geometry_msgs/Point PinkyLeft
+geometry_msgs/Point PinkyRight
+geometry_msgs/Point IndexLeft
+geometry_msgs/Point IndexRight
+geometry_msgs/Point ThumbLeft
+geometry_msgs/Point ThumbRight
