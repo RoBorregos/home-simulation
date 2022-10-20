@@ -56,28 +56,27 @@ with mp_pose.Pose(
             if results.pose_landmarks:
 
                 x = (
-                    results.pose_landmarks.landmark[12].x - results.pose_landmarks.landmark[11].x) / 2
+                    results.pose_landmarks.landmark[12].x + results.pose_landmarks.landmark[11].x) / 2
                 y = (
-                    results.pose_landmarks.landmark[12].y - results.pose_landmarks.landmark[11].y) / 2
+                    results.pose_landmarks.landmark[12].y + results.pose_landmarks.landmark[11].y) / 2
                 z = (
-                    results.pose_landmarks.landmark[12].z - results.pose_landmarks.landmark[11].z) / 2
-
-                cv2.circle(image,
-                           (int((results.pose_landmarks.landmark[12].x+results.pose_landmarks.landmark[11].x)/2 * 640), int(
-                               (results.pose_landmarks.landmark[12].y + results.pose_landmarks.landmark[11].y)/2*480)), circle_radius, WHITE_COLOR,
-                           thickness)
-                # Fill color into the circle
-                cv2.circle(image,
-                           (int((results.pose_landmarks.landmark[12].x+results.pose_landmarks.landmark[11].x)/2 * 640), int(
-                               (results.pose_landmarks.landmark[12].y + results.pose_landmarks.landmark[11].y)/2*480)),
-                           circle_border_radius, color,
-                           thickness)
+                    results.pose_landmarks.landmark[12].z + results.pose_landmarks.landmark[11].z) / 2
 
                 mp_drawing.draw_landmarks(
                     image,
                     results.pose_landmarks,
                     mp_pose.POSE_CONNECTIONS,
                     landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
+
+                cv2.circle(image,
+                           (int((results.pose_landmarks.landmark[12].x+results.pose_landmarks.landmark[11].x)/2 * 640), int(
+                               (results.pose_landmarks.landmark[12].y + results.pose_landmarks.landmark[11].y)/2*480)), circle_radius, WHITE_COLOR,
+                           thickness)
+                cv2.circle(image,
+                           (int((results.pose_landmarks.landmark[12].x+results.pose_landmarks.landmark[11].x)/2 * 640), int(
+                               (results.pose_landmarks.landmark[12].y + results.pose_landmarks.landmark[11].y)/2*480)),
+                           circle_border_radius, (0,0,255),
+                           thickness + 1)
 
                 cv2.imshow('MediaPipe Pose', image)
                 if cv2.waitKey(5) & 0xFF == 27:
