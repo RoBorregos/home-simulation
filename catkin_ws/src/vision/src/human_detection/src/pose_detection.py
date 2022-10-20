@@ -66,8 +66,9 @@ class PoseDetector:
                 min_detection_confidence=0.5,
                 min_tracking_confidence=0.5) as pose:
             while True:
-                if imageReceved is not None:
-                    image = self.bridge.imgmsg_to_cv2(imageReceved, "rgb8")
+                if self.imageReceved is not None:
+                    image = self.bridge.imgmsg_to_cv2(
+                        self.imageReceved, "rgb8")
 
                     image.flags.writeable = False
                     results = pose.process(image)
