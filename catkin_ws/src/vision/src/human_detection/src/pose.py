@@ -6,6 +6,7 @@ import numpy as np
 import rospy
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
+from vision.msg import pose_point
 
 # IMG CONFIGS
 WHITE_COLOR = (224, 224, 224)
@@ -54,7 +55,6 @@ with mp_pose.Pose(
             image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
             if results.pose_landmarks:
-
                 x = (
                     results.pose_landmarks.landmark[12].x + results.pose_landmarks.landmark[11].x) / 2
                 y = (
