@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   handyman
   object_detector
+  pick_and_place
 )
 
 ## System dependencies are found with CMake's conventions
@@ -81,6 +82,7 @@ generate_messages(
   std_msgs
   std_srvs
   object_detector
+  pick_and_place
 )
 
 ################################################

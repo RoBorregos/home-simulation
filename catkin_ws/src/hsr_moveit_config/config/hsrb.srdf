@@ -15,15 +15,11 @@
         <joint name="odom_r"/>
     </group>
     <group name="arm">
-        <joint name="arm_lift_joint"/>
-        <joint name="arm_flex_joint"/>
-        <joint name="arm_roll_joint"/>
-        <joint name="wrist_flex_joint"/>
-        <joint name="wrist_roll_joint"/>
+        <chain base_link="base_link" tip_link="hand_eef_link" />
     </group>
     <group name="hand">
         <joint name="hand_motor_joint"/>
-        <link name="hand_palm_link" />
+        <link name="hand_eef_link" />
         <link name="hand_l_distal_link" />
         <link name="hand_l_finger_vacuum_frame" />
         <link name="hand_l_spring_proximal_link" />
@@ -75,9 +71,9 @@
         <joint name="head_tilt_joint" value="0"/>
     </group_state>
     <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
-    <end_effector name="eef" parent_link="wrist_roll_link" group="hand" parent_group="arm"/>
+    <end_effector name="eef" parent_link="hand_eef_link" group="hand" parent_group="arm"/>
     <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->
-    <virtual_joint name="world_joint" type="planar" parent_frame="odom" child_link="base_footprint"/>
+    <virtual_joint name="world_joint" type="planar" parent_frame="odom" child_link="internal_odom"/>
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
     <disable_collisions link1="arm_flex_link" link2="arm_lift_link" reason="Adjacent"/>
     <disable_collisions link1="arm_flex_link" link2="arm_roll_link" reason="Adjacent"/>

@@ -172,6 +172,8 @@ private:
   ros::Publisher  pub_head_trajectory;
   ros::Publisher  pub_base_twist;
 
+  tf::TransformListener listener_;
+
   uint64_t valid_till = 0.0;
   bool is_moving = false;
 
@@ -426,8 +428,7 @@ private:
     position.pose.orientation.z = -0.025166215400788592;
     position.pose.orientation.w = 0.6777179570063863;
 
-    move_all_->setPoseTarget(position, "wrist_roll_link");
-    move_all_->setPlanningTime(3.0);
+    move_all_->setPoseTarget(position);
     bool success = (move_all_->move() == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     if (success) {
       ROS_INFO_STREAM("All moved to target position.");
@@ -490,11 +491,32 @@ private:
 
   void moveBase(ros::Publisher &publisher, double linear_x, double linear_y, double angular_z, double time_ms)
   {
+    if(listener_.canTransform("/odom_xr_link", "/base_footprint", ros::Time(0)) == false)
+    {
+      return;
+    }
+
+    geometry_msgs::PointStamped basefootprint_2_target;
+    geometry_msgs::PointStamped odom_2_target;
+    basefootprint_2_target.header.frame_id = "/odom_xr_link";
+    basefootprint_2_target.header.stamp = ros::Time(0);
+    basefootprint_2_target.point.x = linear_x;
+    basefootprint_2_target.point.y = linear_y;
+    listener_.transformPoint("/base_footprint", basefootprint_2_target, odom_2_target);
+
+    tf::StampedTransform transform;
+    listener_.lookupTransform("/odom_xr_link", "/base_footprint", ros::Time(0), transform);
+    tf::Quaternion currentRotation = transform.getRotation();
+    tf::Matrix3x3 mat(currentRotation);
+    double roll, pitch, yaw;
+    mat.getRPY(roll, pitch, yaw);
+
+
     valid_till = timeSinceEpochMillisec() + time_ms;
     geometry_msgs::Twist twist;
 
-    twist.linear.x  = linear_x;
-    twist.linear.y  = linear_y;
+    twist.linear.x  = odom_2_target.point.x;
+    twist.linear.y  = odom_2_target.point.y;
     twist.angular.z = angular_z;
     publisher.publish(twist);
 
@@ -647,6 +669,12 @@ public:
     // Start: Temporary Added
     ROS_INFO_STREAM("Force Step: " << force_step_);
     std::thread t1(&HandymanMain::checkBase, this);
+    // while (ros::ok())
+    // {
+
+    //   ros::spinOnce();
+    //   loop_rate.sleep();
+    // }
     while (ros::ok())
     {
       if(is_failed_)
