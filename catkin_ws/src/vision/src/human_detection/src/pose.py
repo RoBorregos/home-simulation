@@ -25,10 +25,6 @@ rospy.init_node('ImageRecever', anonymous=True)
 imageSub = rospy.Subscriber(
     "/hsrb/head_center_camera/image_raw", Image, image_callback)
 
-# while True:
-#     print(imageReceved)
-#     sleep(1)
-
 with mp_pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5) as pose:
