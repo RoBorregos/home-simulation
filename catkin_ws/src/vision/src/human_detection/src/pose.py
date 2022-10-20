@@ -25,6 +25,8 @@ rospy.init_node('ImageRecever', anonymous=True)
 imageSub = rospy.Subscriber(
     "/hsrb/head_center_camera/image_raw", Image, image_callback)
 
+# rosbag play 2022-10-06-19-23-37-09.bag
+
 with mp_pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5) as pose:
@@ -42,12 +44,15 @@ with mp_pose.Pose(
 
             if results.pose_landmarks:
 
-                results.pose_landmarks.landmark[33] = {
-                    "x": (results.pose_landmarks.landmark[12].x - results.pose_landmarks.landmark[11].x) / 2,
-                    "y": (results.pose_landmarks.landmark[12].y - results.pose_landmarks.landmark[11].y) / 2,
-                    "z": (results.pose_landmarks.landmark[12].z - results.pose_landmarks.landmark[11].z) / 2,
-                    "visibility": 1
-                }
+                x = (
+                    results.pose_landmarks.landmark[12].x - results.pose_landmarks.landmark[11].x) / 2
+                y = (
+                    results.pose_landmarks.landmark[12].y - results.pose_landmarks.landmark[11].y) / 2
+                z = (
+                    results.pose_landmarks.landmark[12].z - results.pose_landmarks.landmark[11].z) / 2
+
+                cv2.circle(image, (int(x * 640), int(y * 480)),
+                           5, (0, 0, 255), -1)
 
                 mp_drawing.draw_landmarks(
                     image,
