@@ -1,10 +1,21 @@
 from time import sleep
+from typing import Tuple
 import cv2
 import mediapipe as mp
 import numpy as np
 import rospy
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
+
+# IMG CONFIGS
+WHITE_COLOR = (224, 224, 224)
+color: Tuple[int, int, int] = WHITE_COLOR
+thickness: int = 2
+circle_radius: int = 2
+
+circle_border_radius = max(circle_radius + 1,
+                           int(circle_radius * 1.2))
+
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -51,8 +62,16 @@ with mp_pose.Pose(
                 z = (
                     results.pose_landmarks.landmark[12].z - results.pose_landmarks.landmark[11].z) / 2
 
-                cv2.circle(image, (int(x * 640), int(y * 480)),
-                           5, (0, 0, 255), -1)
+                cv2.circle(image,
+                           (int((results.pose_landmarks.landmark[12].x+results.pose_landmarks.landmark[11].x)/2 * 640), int(
+                               (results.pose_landmarks.landmark[12].y + results.pose_landmarks.landmark[11].y)/2*480)), circle_radius, WHITE_COLOR,
+                           thickness)
+                # Fill color into the circle
+                cv2.circle(image,
+                           (int((results.pose_landmarks.landmark[12].x+results.pose_landmarks.landmark[11].x)/2 * 640), int(
+                               (results.pose_landmarks.landmark[12].y + results.pose_landmarks.landmark[11].y)/2*480)),
+                           circle_border_radius, color,
+                           thickness)
 
                 mp_drawing.draw_landmarks(
                     image,
