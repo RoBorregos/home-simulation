@@ -34,21 +34,30 @@ with mp_pose.Pose(
 
             image.flags.writeable = False
             results = pose.process(image)
-            
+
             # print(results.pose_landmarks.landmark[12])
             # print(results.pose_landmarks.landmark[11])
             image.flags.writeable = True
             image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-            mp_drawing.draw_landmarks(
-                image,
-                results.pose_landmarks,
-                mp_pose.POSE_CONNECTIONS,
-                landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
-            
-            cv2.imshow('MediaPipe Pose', image)
-            if cv2.waitKey(5) & 0xFF == 27:
-                break
+            if results.pose_landmarks:
+
+                results.pose_landmarks.landmark[33] = {
+                    "x": (results.pose_landmarks.landmark[12].x - results.pose_landmarks.landmark[11].x) / 2,
+                    "y": (results.pose_landmarks.landmark[12].y - results.pose_landmarks.landmark[11].y) / 2,
+                    "z": (results.pose_landmarks.landmark[12].z - results.pose_landmarks.landmark[11].z) / 2,
+                    "visibility": 1
+                }
+
+                mp_drawing.draw_landmarks(
+                    image,
+                    results.pose_landmarks,
+                    mp_pose.POSE_CONNECTIONS,
+                    landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
+
+                cv2.imshow('MediaPipe Pose', image)
+                if cv2.waitKey(5) & 0xFF == 27:
+                    break
         else:
             print("Image not recived")
         sleep(1)
