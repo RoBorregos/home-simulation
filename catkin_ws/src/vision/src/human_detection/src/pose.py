@@ -13,10 +13,12 @@ imageReceved = None
 
 bridge = CvBridge()
 
+
 def image_callback(data):
     global imageReceved
     print("Recived cam")
     imageReceved = data
+
 
 rospy.init_node('ImageRecever', anonymous=True)
 
@@ -32,10 +34,11 @@ with mp_pose.Pose(
         min_tracking_confidence=0.5) as pose:
     while True:
         if imageReceved is not None:
-            image = np.frombuffer(imageReceved.data, dtype=np.uint8).reshape(
-                imageReceved.height, imageReceved.width, -1)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            image = cv2.flip(image, 1)
+            image = bridge.imgmsg_to_cv2(imageReceved, "bgr8")
+            # image = np.frombuffer(imageReceved.data, dtype=np.uint8).reshape(
+            #     imageReceved.height, imageReceved.width, -1)
+            # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            # image = cv2.flip(image, 1)
             image.flags.writeable = False
             results = pose.process(image)
 
