@@ -52,7 +52,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   pose_point.msg
-  pose_position.msg
+  pose_positions.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -72,6 +72,7 @@ add_message_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
+  geometry_msgs
   std_msgs
 )
 
