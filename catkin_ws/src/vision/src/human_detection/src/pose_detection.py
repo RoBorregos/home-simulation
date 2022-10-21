@@ -7,6 +7,7 @@ import rospy
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from vision.msg import pose_positions
+from geometry_msgs.msg import Point
 
 indexToName = ["nose",
                "leftEyeInner",
@@ -98,8 +99,11 @@ class PoseDetector:
                         z = (
                             results.pose_landmarks.landmark[12].z + results.pose_landmarks.landmark[11].z) / 2
                         posePublish = pose_positions()
+                        point = Point()
                         for(i, landmark) in enumerate(results.pose_landmarks.landmark[11:23]):
                             initName = PublisherPoints[i]["name"]
+                            point.x = landmark.x
+                            
                             value = {
                                 "x": landmark.x,
                                 "y": landmark.y,

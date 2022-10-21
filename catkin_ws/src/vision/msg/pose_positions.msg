@@ -7,9 +7,9 @@ geometry_msgs/Point wristLeft
 geometry_msgs/Point wristRight
 geometry_msgs/Point handLeft
 geometry_msgs/Point handRight
-geometry_msgs/Point PinkyLeft
-geometry_msgs/Point PinkyRight
-geometry_msgs/Point IndexLeft
-geometry_msgs/Point IndexRight
-geometry_msgs/Point ThumbLeft
-geometry_msgs/Point ThumbRight
+geometry_msgs/Point pinkyLeft
+geometry_msgs/Point pinkyRight
+geometry_msgs/Point indexLeft
+geometry_msgs/Point indexRight
+geometry_msgs/Point thumbLeft
+geometry_msgs/Point thumbRight
