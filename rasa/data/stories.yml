@@ -1,9 +1,9 @@
 version: "3.1"
 
 stories:
-- story: instruction
+- story: regular_instruction
   steps:
-  - intent: instruction
+  - intent: regular_instruction
   - action: utter_instruction
 
 - story: happy path
