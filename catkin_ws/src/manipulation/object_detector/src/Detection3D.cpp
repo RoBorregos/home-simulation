@@ -564,8 +564,8 @@ public:
     std::vector<std::string> object_ids = planning_scene_interface_.getKnownObjectNames();
     planning_scene_interface_.removeCollisionObjects(object_ids);
     ros::Duration(2).sleep();
-    std_srvs::Empty emptyCall;
-    clear_octomap.call(emptyCall);
+    // std_srvs::Empty emptyCall;
+    // clear_octomap.call(emptyCall);
 
     // Get cloud ready
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);

@@ -28,6 +28,16 @@ joint_limits:
     max_velocity: 1
     has_acceleration_limits: false
     max_acceleration: 0
+  hand_l_spring_proximal_joint:
+    has_velocity_limits: false
+    max_velocity: 1
+    has_acceleration_limits: false
+    max_acceleration: 0
+  hand_r_spring_proximal_joint:
+    has_velocity_limits: false
+    max_velocity: 1
+    has_acceleration_limits: false
+    max_acceleration: 0
   head_pan_joint:
     has_velocity_limits: false
     max_velocity: 1

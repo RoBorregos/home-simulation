@@ -17,12 +17,6 @@
 	</node>
 
 	<!-- Detection3D -->
-	<node 
-        pkg="tf" 
-        type="static_transform_publisher" 
-        name="odom_broadcaster" 
-        args="0 0 0 0 0 0 1 map odom 20" 
-    />
 	<node name="Detection3D" pkg="object_detector" type="Detection3D" respawn="true" output="screen">
 		<remap from="/camera/depth/points" to="/hsrb/head_rgbd_sensor/depth_registered/points"/>
 	</node>

@@ -28,9 +28,13 @@ for name in MoveItErrorCodes.__dict__.keys():
         code = MoveItErrorCodes.__dict__[name]
         moveit_error_dict[code] = name
 
-ARM_GROUP="arm"
+ARM_GROUP="whole_body"
 GRIPPER_GROUP="hand"
-GRASP_POSTURES_FRAME_ID="hand_palm_link"
+GRASP_POSTURES_FRAME_ID="hand_eef_link"
+ALLOW_CONTACT = ["hand_eef_link", "hand_palm_link", "hand_motor_dummy_link", "hand_l_proximal_link", "hand_l_spring_proximal_link",
+                 "hand_l_mimic_distal_link", "hand_l_distal_link", "hand_l_finger_tip_frame", "hand_l_finger_vacuum_frame",
+                "hand_r_proximal_link", "hand_r_spring_proximal_link", "hand_r_mimic_distal_link", "hand_r_distal_link",
+                "hand_r_finger_tip_frame", "<octomap>", "base_link"] 
 
 # Function to create a PickupGoal with the provided data.
 
@@ -77,26 +81,63 @@ def createPlaceGoal(place_locations,
     placeg.allowed_touch_objects.extend(links_to_allow_contact)
     return placeg
 
-def create_grasp(poseStamped):
+def create_placings_from_object_pose(posestamped):
+    """ Set PlaceLocation according to Pose sended """
+    grasp_postures_frame_id = GRASP_POSTURES_FRAME_ID
+    gripper_joint_names = ["hand_motor_joint", "hand_l_spring_proximal_joint", "hand_r_spring_proximal_joint"]
+    time_pre_grasp_posture = 0.8
+    gripper_grasp_positions = [ 0.0, 0.0, 0.0]
+    gripper_pre_grasp_positions = [ 1.0598, 0.0, 0.0 ]
+    
+
+    place_locs = []
+    pre_grasp_posture = JointTrajectory()
+    # Actually ignored....
+    pre_grasp_posture.header.frame_id = grasp_postures_frame_id
+    pre_grasp_posture.joint_names = gripper_joint_names
+    jtpoint = JointTrajectoryPoint()
+    jtpoint.positions = gripper_pre_grasp_positions
+    jtpoint.time_from_start = rospy.Duration(time_pre_grasp_posture)
+    pre_grasp_posture.points.append(jtpoint)
+    
+    pl = PlaceLocation()
+    pl.place_pose = posestamped
+    pl.pre_place_approach = createGripperTranslation(
+        Vector3(1.0, 0.0, 0.0), desired_distance = 0.20, min_distance = 0.0)
+    pl.post_place_retreat = createGripperTranslation(
+        Vector3(-1.0, -0.30, 0.0), desired_distance = 0.20, min_distance = 0.0)
+
+    pl.post_place_posture = pre_grasp_posture
+    place_locs.append(pl)
+
+    return place_locs
+
+def create_grasp(poseStamped, allowed_touch_objects, grasp_config):
     """
     :type pose: Pose
         pose of the gripper for the grasp
     :rtype: Grasp
     """
-    grasp_postures_frame_id = "hand_palm_link"
-    gripper_joint_names = ["hand_motor_joint"]
+    grasp_postures_frame_id = GRASP_POSTURES_FRAME_ID
+    gripper_joint_names = ["hand_motor_joint", "hand_l_spring_proximal_joint", "hand_r_spring_proximal_joint"]
     time_pre_grasp_posture = 0.8
     time_grasp_posture = 0.2
     time_grasp_posture_final = 0.5
-    gripper_grasp_positions = [ 1.0598 ]
-    gripper_pre_grasp_positions = [ 0.0 ]
+    gripper_grasp_positions = [ 0.0, 0.0, 0.0]
+
+    # mapToAngel = [(0.15, 1.239), (0.102, 0.75), (0.09, 0.506145), (0.05, 0.314159)]
+    # width_angle = 1.239
+    # for elem in mapToAngel:
+    #     if grasp_config.width.data < elem[0]:
+    #         width_angle = elem[1]
+
+    gripper_pre_grasp_positions = [ 1.0598, 0.0, 0.0 ]
     fix_tool_frame_to_grasping_frame_roll = 0
     fix_tool_frame_to_grasping_frame_pitch = 0
     fix_tool_frame_to_grasping_frame_yaw = 0
     grasp_desired_distance = 0.20
     grasp_min_distance = 0.0
     max_contact_force = 0.0
-    allowed_touch_objects = ["hand_palm_link", "hand_motor_dummy_link", "hand_l_proximal_link", "hand_l_spring_proximal_link", "hand_l_mimic_distal_link", "hand_l_distal_link", "hand_l_finger_tip_frame", "hand_l_finger_vacuum_frame", "hand_r_proximal_link", "hand_r_spring_proximal_link", "hand_r_mimic_distal_link", "hand_r_distal_link", "hand_r_finger_tip_frame"] 
     g = Grasp()
     
     pre_grasp_posture = JointTrajectory()
@@ -135,7 +176,7 @@ def create_grasp(poseStamped):
     fixed_pose.orientation = Quaternion(*q)
 
     g.grasp_pose = PoseStamped(header, fixed_pose)
-    # g.grasp_quality = min(1000, max(0, grasp_quality)) / 1000
+    g.grasp_quality = grasp_config.score.data # min(1000, max(0, grasp_quality)) / 1000
 
     g.pre_grasp_approach = createGripperTranslation(
         Vector3(1.0, 0.0, 0.0), desired_distance = grasp_desired_distance,
@@ -167,7 +208,7 @@ def createGripperTranslation(direction_vector, desired_distance, min_distance):
     g_trans.min_distance = min_distance
     return g_trans
 
-def gpd_to_moveit_new(grasp_config_list):
+def gpd_to_moveit_new(grasp_config_list, allow_contact_with):
     header = Header()
     header.frame_id = "map"
     kThresholdScore = 1.0
@@ -176,6 +217,7 @@ def gpd_to_moveit_new(grasp_config_list):
         if grasp_config.score.data < kThresholdScore:
                 continue
         rospy.loginfo("grasp score is %f", grasp_config.score.data)
+        rospy.loginfo("grasp required width %f", grasp_config.width.data)
 
         # Set grasp position, translation from hand-base to the parent-link of EEF
         grasp_pose = PoseStamped()
@@ -183,7 +225,7 @@ def gpd_to_moveit_new(grasp_config_list):
         
         grasp_pose.pose.position.x = grasp_config.position.x
         grasp_pose.pose.position.y = grasp_config.position.y
-        grasp_pose.pose.position.z = grasp_config.position.z
+        grasp_pose.pose.position.z = grasp_config.position.z # +0.15
 
         # Rotation Matrix
         rot = numpy.array([[grasp_config.approach.x, grasp_config.binormal.x, grasp_config.axis.x],
@@ -204,7 +246,7 @@ def gpd_to_moveit_new(grasp_config_list):
         grasp_pose.pose.orientation.z = quat[2]
         grasp_pose.pose.orientation.w = quat[3]
 
-        res.append(create_grasp(grasp_pose))
+        res.append(create_grasp(grasp_pose, allow_contact_with, grasp_config))
     return res
 
 # Function to convert from GPD to MoveIt
@@ -329,7 +371,9 @@ class PickAndPlaceServer(object):
         """
         :type goal: PickAndPlaceGoal
         """
-        grasps = gpd_to_moveit_new(goal.grasp_config_list)
+        links_to_allow_contact = ALLOW_CONTACT
+        links_to_allow_contact.extend(goal.allow_contact_with)
+        grasps = gpd_to_moveit_new(goal.grasp_config_list, links_to_allow_contact)
 
         pa = PoseArray()
         pS = PoseStamped()
@@ -338,13 +382,12 @@ class PickAndPlaceServer(object):
             pa.header = grasp.grasp_pose.header
             pa.poses.append(grasp.grasp_pose.pose)
 
+        self.pose_array_p.publish(pa)
+        # rospy.loginfo("Confirming Orientation")
         # self.arm_group.set_pose_target(pS)
         # self.arm_group.plan()
-        # rospy.loginfo("Confirming Orientation")
         # self.arm_group.go(wait=True)
         # self.arm_group.stop()
-
-        self.pose_array_p.publish(pa)
         
         error_code = self.grasp_object(grasps, goal.object_name, goal.allow_contact_with)
         p_res = PickAndPlaceResult()
@@ -359,7 +402,7 @@ class PickAndPlaceServer(object):
         """
         :type goal: PickAndPlaceGoal
         """
-        error_code = self.place_object(goal.object_pose, goal.object_name, goal.allow_contact_with)
+        error_code = self.place_object(goal.target_pose, goal.object_name, goal.allow_contact_with)
         p_res = PickAndPlaceResult()
         p_res.error_code = error_code
         if error_code != 1:
@@ -396,7 +439,7 @@ class PickAndPlaceServer(object):
 
         possible_grasps = grasps
 
-        links_to_allow_contact = []
+        links_to_allow_contact = ALLOW_CONTACT
 
         links_to_allow_contact.extend(allow_contact_with)
 
@@ -470,9 +513,9 @@ class PickAndPlaceServer(object):
     # Function to place an object.
     def place_object(self, object_pose, object_name, allow_contact_with = [], try_only_with_arm_first = False):
 
-        possible_placings = [] # TODO: Get Placing Positions
+        possible_placings = create_placings_from_object_pose(object_pose)
         
-        links_to_allow_contact = []
+        links_to_allow_contact = ALLOW_CONTACT
 
         links_to_allow_contact.extend(allow_contact_with)
 

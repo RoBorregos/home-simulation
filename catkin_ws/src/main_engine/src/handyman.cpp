@@ -12,11 +12,13 @@
 #include <actionlib/client/simple_action_client.h>
 #include <object_detector/DetectObjects3DAction.h>
 #include <pick_and_place/PickAndPlaceAction.h>
+#include <pick_and_place/EnableOctomap.h>
 #include <gpd_ros/detect_grasps_samples.h>
 #include <gpd_ros/GraspConfig.h>
 #include <gpd_ros/GraspConfigList.h>
+#include <moveit_msgs/MoveItErrorCodes.h>
 #include <move_base_msgs/MoveBaseAction.h>
-#include <main_engine/NavPoses.h>
+#include <main_engine/Labels.h>
 #include <chrono>
 #include <thread>
 
@@ -58,11 +60,15 @@ namespace Detect3DCb{
 }
 
 namespace PickCb{
+  static bool active = true;
+  static PickAndPlaceResultConstPtr result;
   // Called once when the goal completes
   void doneCb(const actionlib::SimpleClientGoalState& state,
               const PickAndPlaceResultConstPtr& result)
   {
+    PickCb::result = result;
     ROS_INFO("Pick - Finished in state [%s]", state.toString().c_str());
+    PickCb::active = false;
   }
 
   // Called once when the goal becomes active
@@ -139,7 +145,7 @@ private:
     WaitForInstruction,
     GoToRoom1,
     Grasp,
-    WaitForGrasping,
+    Place,
     ComeBack,
     TaskFinished,
   };
@@ -179,6 +185,7 @@ private:
 
   // clear_octomap
   ros::ServiceClient clear_octomap;
+  ros::ServiceClient enable_octomap;
 
 
   ros::NodeHandle nh_;
@@ -265,7 +272,7 @@ private:
     std::vector<std::string> base_joint_names {"odom_r", "odom_x", "odom_y"};
     std::vector<double> base_joint_positions(base_joint_names.size(), 0.0);
     std::vector<bool> base_joint_filled(base_joint_names.size(), false);
-    std::vector<std::string> hand_joint_names {"hand_motor_joint", "hand_l_spring_proximal_joint", "hand_r_spring_proximal_joint"};
+    std::vector<std::string> hand_joint_names {"hand_motor_joint"};
     std::vector<double> hand_joint_positions(hand_joint_names.size(), 0.0);
     std::vector<bool> hand_joint_filled(hand_joint_names.size(), false);
     std::vector<std::string> head_joint_names {"head_pan_joint", "head_tilt_joint"};
@@ -298,7 +305,6 @@ private:
         }
       }
     }
-
     if (allTrue(hand_joint_filled)) {
       operateHand(pub_gripper_trajectory, hand_joint_positions, hand_joint_names, duration);
     }
@@ -612,6 +618,8 @@ public:
     ROS_INFO("Waiting for Clear Octomap service to start.");
     clear_octomap = nh_.serviceClient<std_srvs::Empty>("/clear_octomap");
     clear_octomap.waitForExistence();
+    enable_octomap = nh_.serviceClient<pick_and_place::EnableOctomap>("/enable_octomap");
+    enable_octomap.waitForExistence();
 
     ROS_INFO("Ready!");
 
@@ -669,12 +677,12 @@ public:
     // Start: Temporary Added
     ROS_INFO_STREAM("Force Step: " << force_step_);
     std::thread t1(&HandymanMain::checkBase, this);
-    // while (ros::ok())
-    // {
+    while (ros::ok() && force_step_ == 100)
+    {
 
-    //   ros::spinOnce();
-    //   loop_rate.sleep();
-    // }
+      ros::spinOnce();
+      loop_rate.sleep();
+    }
     while (ros::ok())
     {
       if(is_failed_)
@@ -735,7 +743,7 @@ public:
         }
         case GoToRoom1:
         {
-          if (moveRobot(NavPosesDict[MAP::TEST1][ROOM::LIVING_ROOM][PLACE::LOW_TABLE].val)){
+          if (moveRobot(NavPosesDict[MAP::L20_01][ROOM::LIVING_ROOM][PLACE::SQUARE_LOW_TABLE].val)){
             
             step_++;
           }
@@ -743,46 +751,106 @@ public:
         }
         case Grasp:
         {
-          moveAll();
-          step_++;
-          break;
-          DetectObjects3DGoal goal;
-          ROS_INFO("Executing 3D Vision");
-          Detect3DCb::active = true;
-          ac_detection3D.sendGoal(goal, &Detect3DCb::doneCb, &Detect3DCb::activeCb, &Detect3DCb::feedbackCb);
-          while(Detect3DCb::active) {
-            loop_rate.sleep();
-            continue;
-          }
-          if (Detect3DCb::result == NULL || Detect3DCb::result->object_cloud.samples.size() == 0) {
-            ROS_INFO_STREAM("No object found");
-            step_++;
-            break;
-          }
-          // rotateTowardsPoint(Detect3DCb::result->object_pose.pose.position);
+          bool pickFailed = false;
+          int status_code = -1;
+          int attempts = 3;
 
-          gpd_ros::detect_grasps_samples srv_grasps;
-          srv_grasps.request.cloud_samples = Detect3DCb::result->object_cloud;
-          ROS_INFO_STREAM("Result Samples: " << srv_grasps.request.cloud_samples.samples.size());
-          if (client_grasping.call(srv_grasps)) {
-            gpd_ros::GraspConfigList grasp_configs = srv_grasps.response.grasp_configs;
-            if (grasp_configs.grasps.size() != 0) {
-              ROS_INFO_STREAM("Received grasps: " << grasp_configs.grasps.size());
-              PickAndPlaceGoal goalPick;
-              goalPick.grasp_config_list = grasp_configs;
-              goalPick.object_name = "current";
-              goalPick.allow_contact_with = {"<octomap>"}; // TODO: Add table.
-              ac_pick.sendGoal(goalPick, &PickCb::doneCb, &PickCb::activeCb, &PickCb::feedbackCb);
-              ROS_INFO_STREAM("Grasps Sended.");
-            } else {
-              ROS_INFO_STREAM("No grasps received");
+          while (status_code < 0 && attempts > 0) {
+            std_srvs::Empty emptyCall;
+            clear_octomap.call(emptyCall);
+            pick_and_place::EnableOctomap srvEOctomap;
+            srvEOctomap.request.enable = true;
+            enable_octomap.call(srvEOctomap);
+
+            // Check Left.
+            ROS_INFO("HEAD Left Position");
+            moveHead(vector<double>({0.6, -0.6887}));
+            // Check Right.
+            ROS_INFO("HEAD Right Position");
+            moveHead(vector<double>({-0.6, -0.6887}));
+            // Default.
+            ROS_INFO("HEAD Default Position");
+            moveHead(vector<double>({0.0, -0.6887}));
+
+            // srvEOctomap.request.enable = false;
+            // enable_octomap.call(srvEOctomap);
+
+            DetectObjects3DGoal goal;
+            ROS_INFO("Executing 3D Vision");
+            Detect3DCb::active = true;
+            ac_detection3D.sendGoal(goal, &Detect3DCb::doneCb, &Detect3DCb::activeCb, &Detect3DCb::feedbackCb);
+            while(Detect3DCb::active) {
+              loop_rate.sleep();
+              continue;
+            }
+            if (Detect3DCb::result == NULL || Detect3DCb::result->object_cloud.samples.size() == 0) {
+              ROS_INFO_STREAM("No object found");
               step_++;
               break;
             }
+
+            gpd_ros::detect_grasps_samples srv_grasps;
+            srv_grasps.request.cloud_samples = Detect3DCb::result->object_cloud;
+            ROS_INFO_STREAM("Result Samples: " << srv_grasps.request.cloud_samples.samples.size());
+            if (client_grasping.call(srv_grasps)) {
+              gpd_ros::GraspConfigList grasp_configs = srv_grasps.response.grasp_configs;
+              if (grasp_configs.grasps.size() != 0) {
+                ROS_INFO_STREAM("Received grasps: " << grasp_configs.grasps.size());
+                PickAndPlaceGoal goalPick;
+                goalPick.grasp_config_list = grasp_configs;
+                goalPick.object_name = "current";
+                goalPick.allow_contact_with = {"<octomap>"}; // TODO: Add table.
+                PickCb::active = true;
+                ac_pick.sendGoal(goalPick, &PickCb::doneCb, &PickCb::activeCb, &PickCb::feedbackCb);
+                ROS_INFO_STREAM("Grasps Sended.");
+                while(PickCb::active) {
+                  loop_rate.sleep();
+                  continue;
+                }
+                attempts -= 1;
+                status_code = PickCb::result->error_code;
+                if (status_code == moveit_msgs::MoveItErrorCodes::PLANNING_FAILED || status_code == moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN) {
+                  attempts = 0;
+                }
+                if (status_code == moveit_msgs::MoveItErrorCodes::SUCCESS) {
+                  ROS_INFO_STREAM("Grasp SUCCESSFULL");
+                }else {
+                  ROS_INFO_STREAM("Grasp Failed. Remaining Attempts" << attempts);  
+                }
+              } else {
+                ROS_INFO_STREAM("No grasps received");
+                step_++;
+                break;
+              }
+            }
+            else {
+              ROS_ERROR("Failed to call service client_grasping");
+            }
           }
-          else {
-            ROS_ERROR("Failed to call service client_grasping");
-          }
+          step_++;
+          break;
+        }
+        case Place:
+        {
+          PickAndPlaceGoal goalPlace;
+          geometry_msgs::PoseStamped* target_pose = &goalPlace.target_pose;
+          target_pose->header.frame_id = "map";
+          target_pose->header.stamp = ros::Time::now();
+          target_pose->pose.position.x = 0.4280264973640442;
+          target_pose->pose.position.y = 0.5202085375785828;
+          target_pose->pose.position.z = 0.5050736665725708 + 0.1; // Add Table Margin
+          tf::StampedTransform transform;
+          listener_.lookupTransform("/map", "/base_footprint", ros::Time(0), transform);
+          tf::Quaternion currentRotation = transform.getRotation();
+          target_pose->pose.orientation.x = currentRotation.getX();
+          target_pose->pose.orientation.y = currentRotation.getY();
+          target_pose->pose.orientation.z = currentRotation.getZ();
+          target_pose->pose.orientation.w = currentRotation.getW();
+
+          goalPlace.object_name = "current";
+          goalPlace.allow_contact_with = {"<octomap>"}; // TODO: Add table.
+          ac_place.sendGoal(goalPlace, &PlaceCb::doneCb, &PlaceCb::activeCb, &PlaceCb::feedbackCb);
+          ROS_INFO_STREAM("Place Sended.");
           step_++;
           break;
         }

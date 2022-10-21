@@ -28,6 +28,11 @@ find_package(catkin REQUIRED COMPONENTS
   gpd_ros
 )
 
+add_service_files(
+  FILES
+  EnableOctomap.srv
+)
+
 add_action_files(
   FILES
   PickAndPlace.action
