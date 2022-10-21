@@ -6,7 +6,7 @@ import numpy as np
 import rospy
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-from vision.msg import pose_point
+from vision.msg import pose_positions
 
 indexToName = ["nose",
                "leftEyeInner",
@@ -43,6 +43,23 @@ indexToName = ["nose",
                "rightFootIndex"]
 
 
+PublisherPoints = [
+    {"name": "shoulderLeft", "index": 11},
+    {"name": "shoulderRight", "index": 12},
+    {"name": "elbowLeft", "index": 13},
+    {"name": "elbowRight", "index": 14},
+    {"name": "wristLeft", "index": 15},
+    {"name": "wristRight", "index": 16},
+    {"name": "pinkyLeft", "index": 17},
+    {"name": "pinkyRight", "index": 18},
+    {"name": "indexLeft", "index": 19},
+    {"name": "indexRight", "index": 20},
+    {"name": "thumbLeft", "index": 21},
+    {"name": "thumbRight", "index": 22},
+    # {"name": "chest", "index": 33},
+]
+
+
 class PoseDetector:
     def __init__(self):
         self.mp_pose = mp.solutions.pose
@@ -56,7 +73,7 @@ class PoseDetector:
             "/hsrb/head_center_camera/image_raw", Image, self.image_callback)
 
         self.posePub = rospy.Publisher(
-            "/vision/pose", pose_point, queue_size=10)
+            "/vision/pose", pose_positions, queue_size=10)
 
     def image_callback(self, data):
         self.imageReceved = data
@@ -80,14 +97,26 @@ class PoseDetector:
                             results.pose_landmarks.landmark[12].y + results.pose_landmarks.landmark[11].y) / 2
                         z = (
                             results.pose_landmarks.landmark[12].z + results.pose_landmarks.landmark[11].z) / 2
-                        for(i, landmark) in enumerate(results.pose_landmarks.landmark):
-                            self.posePub.publish(
-                                indexToName[i], landmark.x, landmark.y, landmark.z)
+                        posePublish = pose_positions()
+                        for(i, landmark) in enumerate(results.pose_landmarks.landmark[11:23]):
+                            initName = PublisherPoints[i]["name"]
+                            value = {
+                                "x": landmark.x,
+                                "y": landmark.y,
+                                "z": landmark.z
+                            }
+
+                            posePublish.__setattr__(initName, value)
                             print(indexToName[i])
                             print("x: ", x, "y: ", y, "z: ", z)
                         print("Chest: ")
                         print("x: ", x, "y: ", y, "z: ", z)
-                        self.posePub.publish("chest", x, y, z)
+                        posePublish.chest = {
+                            "x": x,
+                            "y": y,
+                            "z": z
+                        }
+                        self.posePub.publish(posePublish)
                 else:
                     print("Image not recived")
                 sleep(1)
