@@ -39,11 +39,11 @@ int main(int argc, char **argv)
   while (ros::ok())
   {
     //Receive Type of map
-    if(mapID.data=="LayoutA" && enter == true){
+    if(mapID.data=="Layout2020HM01" && enter == true){
       // Now change the map
       nav_msgs::LoadMap::Request  req;
       nav_msgs::LoadMap::Response resp;
-      req.map_url = ros::package::getPath("nav_main") + "/maps/roborregosmapB.yaml";
+      req.map_url = ros::package::getPath("nav_main") + "/maps/Layout2019HM01.yaml";
       ros::service::waitForService("change_map", 5000);
       ros::service::call("change_map", req, resp);
       pose.header.frame_id = fixed_frame;
