@@ -12,13 +12,18 @@
 
 boost::shared_ptr<nav_msgs::OccupancyGrid const> map_;
 std_msgs::String mapID;
+bool newmap=false;
 void mapCallback(const boost::shared_ptr<nav_msgs::OccupancyGrid const>& map){
     map_ = map;
 }
 
  void mapIDCallback(const std_msgs::String::ConstPtr& msg)
    {
-     mapID.data = msg->data.c_str();
+    if(msg->data!=mapID.data){
+      mapID.data = msg->data.c_str();
+      newmap=true;
+    } 
+     
    }
 int main(int argc, char **argv)
 {
@@ -56,19 +61,47 @@ int main(int argc, char **argv)
       pose.pose.pose.orientation.z = -0.017841180377059222;
       pose.pose.pose.orientation.w = 0.9998408334743851;
       set_pose_pub.publish(pose);
-      //Put the old map back so the next test isn't broken
-      //req.map_url = ros::package::getPath("nav_main") + "/maps/roborregosmap.yaml";
-      //ros::service::call("change_map", req, resp);
-      enter = false;
+      newmap = false;
     }
     else if(mapID.data=="LayoutB"){
         //Change map
     }
-    else if(mapID.data=="LayoutC"){
+    else if(mapID.data=="LayoutC" && newmap == true){
         //Change map
+        nav_msgs::LoadMap::Request  req;
+        nav_msgs::LoadMap::Response resp;
+        req.map_url = ros::package::getPath("nav_main") + "/maps/roborregosmapC.yaml";
+        ros::service::waitForService("change_map", 5000);
+        ros::service::call("change_map", req, resp);
+        pose.header.frame_id = fixed_frame;
+        pose.header.stamp=ros::Time::now();
+        pose.pose.pose.position.x = 0;
+        pose.pose.pose.position.y = 0;
+        pose.pose.pose.position.z = 0;
+        pose.pose.pose.orientation.x = 0;
+        pose.pose.pose.orientation.y = 0;
+        pose.pose.pose.orientation.z = -0.017841180377059222;
+        pose.pose.pose.orientation.w = 0.9998408334743851;
+        set_pose_pub.publish(pose);
     }
-    else if(mapID.data=="LayoutD"){
+    else if(mapID.data=="LayoutD" && newmap == true){
         //Change map
+        nav_msgs::LoadMap::Request  req;
+        nav_msgs::LoadMap::Response resp;
+        req.map_url = ros::package::getPath("nav_main") + "/maps/roborregosmapD.yaml";
+        ros::service::waitForService("change_map", 5000);
+        ros::service::call("change_map", req, resp);
+        pose.header.frame_id = fixed_frame;
+        pose.header.stamp=ros::Time::now();
+        pose.pose.pose.position.x = 0;
+        pose.pose.pose.position.y = 0;
+        pose.pose.pose.position.z = 0;
+        pose.pose.pose.orientation.x = 0;
+        pose.pose.pose.orientation.y = 0;
+        pose.pose.pose.orientation.z = -0.017841180377059222;
+        pose.pose.pose.orientation.w = 0.9998408334743851;
+        set_pose_pub.publish(pose);
+        newmap = false;
     }
 
     ros::spinOnce();
