@@ -5,8 +5,6 @@ geometry_msgs/Point elbowLeft
 geometry_msgs/Point elbowRight
 geometry_msgs/Point wristLeft
 geometry_msgs/Point wristRight
-geometry_msgs/Point handLeft
-geometry_msgs/Point handRight
 geometry_msgs/Point pinkyLeft
 geometry_msgs/Point pinkyRight
 geometry_msgs/Point indexLeft

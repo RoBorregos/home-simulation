@@ -103,24 +103,16 @@ class PoseDetector:
                         for(i, landmark) in enumerate(results.pose_landmarks.landmark[11:23]):
                             initName = PublisherPoints[i]["name"]
                             point.x = landmark.x
-                            
-                            value = {
-                                "x": landmark.x,
-                                "y": landmark.y,
-                                "z": landmark.z
-                            }
+                            point.y = landmark.y
+                            point.z = landmark.z
+                            posePublish.__setattr__(initName, point)
+                        point.x = x
+                        point.y = y
+                        point.z = z
 
-                            posePublish.__setattr__(initName, value)
-                            print(indexToName[i])
-                            print("x: ", x, "y: ", y, "z: ", z)
-                        print("Chest: ")
-                        print("x: ", x, "y: ", y, "z: ", z)
-                        posePublish.chest = {
-                            "x": x,
-                            "y": y,
-                            "z": z
-                        }
+                        posePublish.chest = point
                         self.posePub.publish(posePublish)
+                        sleep(0.1)
                 else:
                     print("Image not recived")
                 sleep(1)
