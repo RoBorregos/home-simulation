@@ -3,7 +3,7 @@
         auto="start"
     />
     <!-- Run the map server --> 
-    <arg name="map_file" default="$(find nav_main)/maps/roborregosmap.yaml"/>
+    <arg name="map_file" default="$(find nav_main)/maps/Layout2020HM01.yaml"/>
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)"/>
     <rosparam file="$(arg map_file)" command="load" ns="map" />
 
