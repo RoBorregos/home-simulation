@@ -293,19 +293,74 @@ map<MAP, map<ROOM, map<PLACE, NavPose>>> NavPosesDict ({
         ROOM::LIVING_ROOM, {
           {PLACE::SAFE_PLACE, NavPose(0.5866, 1.672, 0.0, 0.0, 0.0, 0.0, 1.0)},
           {PLACE::SOFA, NavPose(-0.2026112, 1.795484, 0.0, 0.0, 0.0, 0.99999, 0.00122352)},
-          {PLACE::TV_RACK, NavPose(-0.287374, 3.7186, 0.0, 0.0, 0.0, 0.99999, 0.001487)},
+          {PLACE::WHITE_SIDE_TABLE, NavPose(-0.287374, 3.7186, 0.0, 0.0, 0.0, 0.99999, 0.001487)},
+          {PLACE::WIDE_SHELF, NavPose(-0.7077, -1.11033, 0.0, 0.0, 0.0, 0.99999, 0.70604)},
+          {PLACE::DINING_TABLE, NavPose(0.937265, 2.0945, 0.0, 0.0, 0.0, -0.0802, 0.99678)},//TV SIDE
+          {PLACE::DINING_TABLE, NavPose(2.48, -0.22875, 0.0, 0.0, 0.0, 0.70554, 0.708667)},//Moderator side
+          {PLACE::WOODEN_SIDE_TABLE, NavPose(1.841446, 2.98928, 0.0, 0.0, 0.0, -0.704636, 0.709568)},
+          {PLACE::WOODEN_SHELF, NavPose(2.41756, 4.13381, 0.0, 0.0, 0.0, 0.722, 0.69186)},
         }
       },
       {
         ROOM::BEDROOM, {
-          {PLACE::SAFE_PLACE, NavPose(0.4847, 6.786, 0.0, 0.0, 0.0, 0.32194, 0.94428)},
+          {PLACE::SAFE_PLACE, NavPose(0.4847, 6.786, 0.0, 0.0, 0.0, -0.70817, 0.94428)},
+          {PLACE::ROUND_LOW_TABLE, NavPose(-0.113027, 7.792, 0.0, 0.0, 0.0, 0.68877, 0.724975)},
+          {PLACE::CARDBOARD_BOX, NavPose(1.1117, 8.1934, 0.0, 0.0, 0.0, 0.660465, 0.750856)},
+          {PLACE::WHITE_SIDE_TABLE, NavPose(2.762175, 7.51023, 0.0, 0.0, 0.0, -0.65174, 0.758448)},
+          {PLACE::IRON_BED, NavPose(2.885, 8.004, 0.0, 0.0, 0.0, 0.012144, 0.9999)},
         }
       },
       {
         ROOM::KITCHEN, {
           {PLACE::SAFE_PLACE, NavPose(7.634, 1.482, 0.0, 0.0, 0.0, -0.566, 0.82442)},
+          {PLACE::WOODEN_CUPBOARD, NavPose(7.833177, -1.74045, 0.0, 0.0, 0.0, -0.0304, 0.9999)},
+          {PLACE::BLUE_CUPBOARD, NavPose(8.0, -0.2335, 0.0, 0.0, 0.0, 0.0472, 0.999)},
+          {PLACE::CUSTOM_KITCHEN, NavPose(7.3316, 1.289, 0.0, 0.0, 0.0, -0.99999, 0.00361)},
         }
       },
+    },
+  },
+  {
+    MAP::L19_01,
+    {
+      {
+        ROOM::LIVING_ROOM, {
+          {PLACE::WHITE_SIDE_TABLE, NavPose(1.93948233127594, 0.256114661693573, 0.0, 0.0, 0.0, -0.6848205381255134, 0.7287117609600399)},
+          {PLACE::SQUARE_LOW_TABLE, NavPose(1.6020655632019043, 3.8968348503112793, 0.0, 0.0, 0.0, -0.9996586767371922, 0.02612527557837206)},
+          {PLACE::TV_RACK, NavPose(0.6039611101150513, 5.154543399810791, 0.0, 0.0, 0.0, 0.7128737867773152, 0.7012923528213972)},
+          {PLACE::SOFA, NavPose(-0.17298543453216553, 4.791591644287109, 0.0, 0.0, 0.0, 0.9999678275452648, 0.008021463357986088)},
+        }
+      },
+      {
+        ROOM::LOBBY, {
+          {PLACE::WHITE_RACK, NavPose(-0.4478911757469177, -3.0020151138305664, 0.0, 0.0, 0.0, 0.9973480412355308, 0.0727796993924122)},
+          {PLACE::SOFA, NavPose(-0.2216578722000122, -4.56047248840332, 0.0, 0.0, 0.0, 0.9988937866888545, 0.047023429419823744)},
+          {PLACE::CORNER_SOFA, NavPose(-0.2583094835281372, -5.568724632263184, 0.0, 0.0, 0.0, -0.7675427763141243, 0.6409977273969123)},
+          {PLACE::WHITE_SIDE_TABLE, NavPose(0.8920080065727234, -5.71284818649292, 0.0, 0.0, 0.0, -0.753874594052649, 0.6570183379799636)},
+          {PLACE::WHEEL_CHAIR, NavPose(1.3988338708877563, -3.015367269515991, 0.0, 0.0, 0.0, 0.5288518825800079, 0.8487141369693223)},
+          {PLACE::ARMCHAIR, NavPose(2.157485008239746, -3.1748836040496826, 0.0, 0.0, 0.0, 0.6018731742888666, 0.7985916867031886)},
+        }
+      },
+      {
+        ROOM::BEDROOM, {
+          {PLACE::WOODEN_BED, NavPose(6.84346342086792, -4.616459369659424, 0.0, 0.0, 0.0, 0.7180732628866324, 0.6959675201669581)},
+          {PLACE::WAGON, NavPose(7.958005905151367, -3.0086867809295654, 0.0, 0.0, 0.0, 0.7207458276922953, 0.6931994315232437)},
+          {PLACE::WHITE_SIDE_TABLE, NavPose(9.192727088928223, -2.893117904663086, 0.0, 0.0, 0.0, 0.7210581591748229, 0.6928745420979298)},
+          {PLACE::CARDBOARD_BOX, NavPose(8.946081161499023, -4.72611141204834, 0.0, 0.0, 0.0, 0.027933683258877146, 0.9996097785333998)},
+          {PLACE::BASKETBALL_BOARD, NavPose(8.879722595214844, -5.284809112548828, 0.0, 0.0, 0.0, 0.019264666649894242, 0.999814419089297)},
+          {PLACE::WHITE_SIDE_TABLE, NavPose(8.913117408752441, -6.205936431884766, 0.0, 0.0, 0.0, 0.09591208369898536, 0.9953898091705173)},
+        }
+      },
+      {
+        ROOM::KITCHEN, {
+          {PLACE::BLUE_CUPBOARD, NavPose(8.849146842956543, 3.4084386825561523, 0.0, 0.0, 0.0, 0.25859203203004855, 0.9659866256685805)},
+          {PLACE::CUSTOM_KITCHEN, NavPose(8.273064613342285, 4.6657915115356445, 0.0, 0.0, 0.0, -0.00944165733666463, 0.9999554265599727)}, ////////
+          {PLACE::CUSTOM_KITCHEN, NavPose(7.793449878692627, 4.92230749130249, 0.0, 0.0, 0.0, 0.7034533644153533, 0.7107414185853531)}, ////////
+          {PLACE::DINING_TABLE, NavPose(8.601373672485352, 3.3828446865081787, 0.0, 0.0, 0.0, -0.9932273818598938, 0.11618678033124367)},
+          {PLACE::DINING_TABLE, NavPose(4.916623115539551, 3.558028221130371, 0.0, 0.0, 0.0, 0.006966960133528522, 0.9999757304387431)}, ////////
+          {PLACE::WOODEN_SIDE_TABLE, NavPose(4.918543338775635, 2.2396326065063477, 0.0, 0.0, 0.0, -0.7087806941997595, 0.705428896154465)},
+        }
+      }
     },
   }
 });
@@ -320,15 +375,261 @@ map<MAP, map<ROOM, map<PLACE, vector<ObjectPlaceInfo>>>> PlacePosesDict ({
       {
         ROOM::BEDROOM, {
           {
-            PLACE::SQUARE_LOW_TABLE,
+            PLACE::ROUND_LOW_TABLE,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.3307, 8.746769, 0.0030315)),
-              ObjectPlaceInfo(PREPOSITION::NEXT_TO_THE, "cardboard_box", "", NavPose(-0.3307, 8.746769, 0.0030315)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.2365, 8.565, 0.47)),
+              ObjectPlaceInfo(PREPOSITION::NEXT_TO_THE, "cardboard_box", "", NavPose(0.462, 8.8027, 0.47)),
+              ObjectPlaceInfo(PREPOSITION::NEXT_TO_THE, "white_round_table", "", NavPose(-0.548, 8.77, 0.47)),
             },
+          },
+          {
             PLACE::IRON_BED,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(3.88102, 7.8097, 0.000969)),
-              ObjectPlaceInfo(PREPOSITION::NEXT_TO_THE, "white_rack", "", NavPose(4, 7.8097, 0.000969)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(3.8719, 8.31447, 0.63)),
+              ObjectPlaceInfo(PREPOSITION::CLOSE_TO_THE, "changing_table", "", NavPose(3.75, 7.883, 0.63)),
+            },
+          },
+          {
+            PLACE::CARDBOARD_BOX,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(1.081096, 9.100317, 0.37)),
+              ObjectPlaceInfo(PREPOSITION::IN_THE, "", "", NavPose(1.081096, 9.100317, 0.37)),
+            },
+          },
+          {
+            PLACE::WHITE_ROUND_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-1.06, 8.725, 0.75)),
+            },
+          },
+          {
+            PLACE::WHITE_SIDE_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.8, 6.839, 0.52)),
+              ObjectPlaceInfo(PREPOSITION::IN_FRONT_OF, "desk_lamp", "", NavPose(3.3717, 6.8425, 0.52)),
+            },
+          },
+          {
+            PLACE::CHANGING_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.49435, 9.1226, 0.89)),
+            },
+          },
+        },
+      },
+      {
+        ROOM::LIVING_ROOM, {
+          {
+            PLACE::SOFA,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.98, 1.223, 0.48)),
+            },
+          },
+          {
+            PLACE::WIDE_SHELF,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.778, -1.70576, 0.62)),
+              //ObjectPlaceInfo(PREPOSITION::NEXT_TO_THE, "", "", NavPose(-0.382, -1.70, 1.03)),
+            },
+          },
+          {
+            PLACE::WHITE_SIDE_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.876, 3.6965, 0.5)),
+            },
+          },
+          {
+            PLACE::DINING_TABLE, // tv side
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(1.6886, 2.32177, 0.76)),
+            },
+          },
+          {
+            PLACE::DINING_TABLE, //moderator side
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(1.97, 0.551, 0.76)),
+            },
+          },
+          {
+            PLACE::WOODEN_SIDE_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.489, -1.9453, 0.39)),
+            },
+          },
+          {
+            PLACE::WOODEN_SHELF,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.5, 5.37, 0.69)),
+            },
+          },
+        },
+      },
+      {
+        ROOM::KITCHEN, {
+          {
+            PLACE::CUSTOM_KITCHEN,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(6.82, 0.87287, 0.86)),
+            },
+          },
+          {
+            PLACE::BLUE_CUPBOARD,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(8.7377, -0.3055, 0.72)),
+            },
+          },
+          {
+            PLACE::WOODEN_CUPBOARD,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(8.81089, -1.548, 0.715)),
+            },
+          },
+        },
+      },
+    },
+  },
+  {
+    MAP::L19_01,
+    {
+      {
+        ROOM::LIVING_ROOM, {
+          {
+            PLACE::WHITE_SIDE_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.2456798553466797, -0.5553549528121948, 0.5)),
+            },
+          },
+          {
+            PLACE::SQUARE_LOW_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(1.0706145763397217, 3.7684335708618164, 0.45)),
+            },
+          },
+          {
+            PLACE::TV_RACK,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(0.7550870776176453, 6.016347885131836, 0.78)),
+            },
+          },
+          {
+            PLACE::SOFA,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.8608369827270508, 4.738407135009766, 0.47)),
+            },
+          },
+        },
+      },
+      {
+        ROOM::LOBBY, {
+          {
+            PLACE::WHITE_RACK,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-1.1308220624923706, -3.2177672386169434, 0.65)),
+            },
+          },
+          {
+            PLACE::SOFA,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-1.0445051193237305, -4.528985977172852, 0.47)),
+            },
+          },
+          {
+            PLACE::CORNER_SOFA,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.6737898588180542, -6.312641143798828, 0.48)),
+            },
+          },
+          {
+            PLACE::WHITE_SIDE_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(0.5969144701957703, -6.5032157897949222, 0.5)),
+            },
+          },
+          {
+            PLACE::WHEEL_CHAIR,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(1.3951780796051025, -1.9714635610580444, 0.35)),
+            },
+          },
+          {
+            PLACE::ARMCHAIR,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.424182415008545, -2.2470920085906982, 0.51)), /////
+            },
+          },
+        },
+      },
+      {
+        ROOM::BEDROOM, {
+          {
+            PLACE::WOODEN_BED,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(6.812292098999023, -3.7061290740966797, 0.56)),
+            },
+          },
+          {
+            PLACE::WAGON,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(8.128647804260254, -2.378086805343628, 0.735)),
+            },
+          },
+          {
+            PLACE::WHITE_SIDE_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(9.518295288085938, -2.199258804321289, 0.5)),
+            },
+          },
+          {
+            PLACE::CARDBOARD_BOX,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(9.792860984802246, -4.719234943389893, 0.36)),
+              ObjectPlaceInfo(PREPOSITION::IN_THE, "", "", NavPose(9.792860984802246, -4.719234943389893, 0.36)),
+            },
+          },
+          {
+            PLACE::BASKETBALL_BOARD,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(9.608718872070312, -5.155330181121826, 0.01)),
+            },
+          },
+          {
+            PLACE::WHITE_SIDE_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(9.412614822387695, -6.353552341461182, 0.5)),
+            },
+          },
+        },
+      },
+      {
+        ROOM::KITCHEN, {
+          {
+            PLACE::BLUE_CUPBOARD,
+            {
+              ObjectPlaceInfo(PREPOSITION::IN_THE, "", "", NavPose(9.76361083984375, 3.664841413497925, 0.72)),
+            },
+          },
+          {
+            PLACE::CUSTOM_KITCHEN,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(7.690327167510986, 5.552192211151123, 0.868)), ////////
+            },
+          },
+          {
+            PLACE::DINING_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(7.624382972717285, 3.1180496215820312, 0.758)),
+            },
+          },
+          {
+            PLACE::DINING_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(5.7285332679748535, 3.512711763381958, 0.758)), ////////
+            },
+          },
+          {
+            PLACE::WOODEN_SIDE_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(5.072391033172607, 1.542228102684021, 0.40)),
             },
           },
         },
