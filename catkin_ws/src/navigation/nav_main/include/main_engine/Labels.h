@@ -334,45 +334,41 @@ map<MAP, map<ROOM, map<PLACE, vector<ObjectPlaceInfo>>>> PlacePosesDict ({
           {
             PLACE::ROUND_LOW_TABLE,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.39385, 8.790433, 0.0067)),
-              // ObjectPlaceInfo(PREPOSITION::NEXT_TO_THE, "cardboard_box", "", NavPose(-0.3307, 8.746769, 0.0030315)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.2365, 8.565, 0.47)),
+              ObjectPlaceInfo(PREPOSITION::NEXT_TO_THE, "cardboard_box", "", NavPose(0.462, 8.8027, 0.47)),
+              ObjectPlaceInfo(PREPOSITION::NEXT_TO_THE, "white_round_table", "", NavPose(-0.548, 8.77, 0.47)),
             },
           },
           {
             PLACE::IRON_BED,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(3.88102, 7.8097, 0.000969)),
-              // ObjectPlaceInfo(PREPOSITION::NEXT_TO_THE, "white_rack", "", NavPose(4, 7.8097, 0.000969)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(3.8719, 8.31447, 0.63)),
+              ObjectPlaceInfo(PREPOSITION::CLOSE_TO_THE, "changing_table", "", NavPose(3.75, 7.883, 0.63)),
             },
           },
           {
             PLACE::CARDBOARD_BOX,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(1.081096, 9.100317, 0.0027566)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(1.081096, 9.100317, 0.4)),
             },
           },
           {
             PLACE::WHITE_ROUND_TABLE,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-1.18567, 8.90611, 0.006)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-1.06, 8.725, 0.75)),
             },
           },
           {
             PLACE::WHITE_SIDE_TABLE,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.917661, 6.80527, 0.0019)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.8, 6.839, 0.52)),
+              ObjectPlaceInfo(PREPOSITION::IN_FRONT_OF, "desk_lamp", "", NavPose(3.3717, 6.8425, 0.52)),
             },
           },
           {
             PLACE::CHANGING_TABLE,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.49435, 9.1226, 0.00037)),
-            },
-          },
-          {
-            PLACE::IRON_BED,
-            {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(3.8719, 8.31447, 0.00305)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.49435, 9.1226, 0.89)),
             },
           },
         },
@@ -382,43 +378,44 @@ map<MAP, map<ROOM, map<PLACE, vector<ObjectPlaceInfo>>>> PlacePosesDict ({
           {
             PLACE::SOFA,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.77412, 1.039, 0.0028)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.98, 1.223, 0.48)),
             },
           },
           {
             PLACE::WIDE_SHELF,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.72165, -1.7173, 0.002615)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.778, -1.70576, 0.62)),
+              //ObjectPlaceInfo(PREPOSITION::NEXT_TO_THE, "", "", NavPose(-0.382, -1.70, 1.03)),
             },
           },
           {
             PLACE::WHITE_SIDE_TABLE,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.86946, 3.68385, 0.00864)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(-0.876, 3.6965, 0.5)),
             },
           },
           {
             PLACE::DINING_TABLE, // tv side
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(1.6886, 2.32177, 0.00475)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(1.6886, 2.32177, 0.76)),
             },
           },
           {
             PLACE::DINING_TABLE, //moderator side
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(1.97, 0.551, 0.005)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(1.97, 0.551, 0.76)),
             },
           },
           {
             PLACE::WOODEN_SIDE_TABLE,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.489, -1.9453, 0.00247)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.489, -1.9453, 0.39)),
             },
           },
           {
             PLACE::WOODEN_SHELF,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.5811, 5.29, 0.004625)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.5, 5.37, 0.69)),
             },
           },
         },
@@ -428,19 +425,19 @@ map<MAP, map<ROOM, map<PLACE, vector<ObjectPlaceInfo>>>> PlacePosesDict ({
           {
             PLACE::CUSTOM_KITCHEN,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(6.82, 0.87287, 0.0024)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(6.82, 0.87287, 0.86)),
             },
           },
           {
             PLACE::BLUE_CUPBOARD,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(8.8087, -0.428, 0.004)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(8.7377, -0.3055, 0.72)),
             },
           },
           {
             PLACE::WOODEN_CUPBOARD,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(8.81089, -1.548, 0.00386)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(8.81089, -1.548, 0.715)),
             },
           },
         },
