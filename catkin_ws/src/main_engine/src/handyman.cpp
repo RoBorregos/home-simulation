@@ -1,7 +1,9 @@
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <std_msgs/String.h>
 #include <std_srvs/Empty.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
@@ -18,8 +20,10 @@
 #include <gpd_ros/GraspConfigList.h>
 #include <moveit_msgs/MoveItErrorCodes.h>
 #include <move_base_msgs/MoveBaseAction.h>
+#include <nav_msgs/LoadMap.h>
 #include <main_engine/Labels.h>
 #include <main_engine/MoveBaseCb.h>
+#include <main_engine/ParserCb.h>
 #include <main_engine/Detect3DCb.h>
 #include <main_engine/PickCb.h>
 #include <main_engine/PlaceCb.h>
@@ -68,6 +72,7 @@ private:
   string currEnvironment = "";
   string newEnvironment = "";
   bool is_started_;
+  bool is_new_;
   bool is_finished_;
   bool is_failed_;
 
@@ -76,6 +81,7 @@ private:
   ros::Publisher  pub_gripper_trajectory;
   ros::Publisher  pub_head_trajectory;
   ros::Publisher  pub_base_twist;
+  ros::Publisher  pub_initial_pose;
 
   tf::TransformListener listener_;
 
@@ -86,10 +92,10 @@ private:
   ros::ServiceClient clear_octomap;
   ros::ServiceClient enable_octomap;
 
-
   ros::NodeHandle nh_;
   Detect3DClient ac_detection3D; 
   PickAndPlaceClient ac_pick;
+  ParserClient ac_parser;
   PickAndPlaceClient ac_place;
   MoveBaseClient ac_move;
 
@@ -108,6 +114,7 @@ private:
   {
     instruction_msg_ = "";
     is_started_  = false;
+    is_new_ = true;
     is_finished_ = false;
     is_failed_   = false;
   }
@@ -437,10 +444,45 @@ private:
     return false;
   }
 
+  void setInitialPose() {
+    std::string fixed_frame = "map";
+    geometry_msgs::PoseWithCovarianceStamped pose;
+    pose.header.frame_id = fixed_frame;
+    pose.header.stamp=ros::Time::now();
+    pose.pose.pose.position.x = 0;
+    pose.pose.pose.position.y = 0;
+    pose.pose.pose.position.z = 0;
+    pose.pose.pose.orientation.x = 0;
+    pose.pose.pose.orientation.y = 0;
+    pose.pose.pose.orientation.z = -0.017841180377059222;
+    pose.pose.pose.orientation.w = 0.9998408334743851;
+    pub_initial_pose.publish(pose);
+  }
+
+  void changeMap() {
+    std_srvs::Empty emptyCall;
+    clear_octomap.call(emptyCall);
+
+    if (newEnvironment != "Layout2020HM01" && newEnvironment != "Layout2019HM01" &&
+      newEnvironment != "Layout2021HM01" && newEnvironment != "Layout2019HM02") {
+      ROS_INFO_STREAM("INVALID MAP");
+    } else {
+      nav_msgs::LoadMap::Request  req;
+      nav_msgs::LoadMap::Response resp;
+      req.map_url = ros::package::getPath("nav_main") + "/maps/"+newEnvironment+".yaml";
+      ros::service::waitForService("change_map", 5000);
+      ros::service::call("change_map", req, resp);
+      ros::Duration(4).sleep();
+      setInitialPose(); 
+      ros::Duration(2).sleep();
+    }
+  }
+
 public:
 
   HandymanMain(): 
     ac_detection3D(nh_, "Detect3D", true),
+    ac_parser(nh_, "Parser", true),
     ac_pick(nh_, "/pickup_pose", true),
     ac_place(nh_, "/place_pose", true),
     ac_move(nh_, "/move_base", true)
@@ -449,6 +491,8 @@ public:
     ac_detection3D.waitForServer();
     ROS_INFO("Waiting for Pick action server to start.");
     ac_pick.waitForServer();
+    ROS_INFO("Waiting for Parser action server to start.");
+    ac_parser.waitForServer();
     ROS_INFO("Waiting for Place action server to start.");
     ac_place.waitForServer();
     // ROS_INFO("Waiting for Move Base action server to start.");
@@ -501,6 +545,7 @@ public:
     moveit::planning_interface::MoveGroupInterface move_all("whole_body"); move_all_ = &move_all;
     ros::Subscriber sub_msg = nh_.subscribe<handyman::HandymanMsg>(sub_msg_to_robot_topic_name, 100, &HandymanMain::messageCallback, this);
     ros::Publisher  pub_msg = nh_.advertise<handyman::HandymanMsg>(pub_msg_to_moderator_topic_name, 10);
+    pub_initial_pose = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1000);
     pub_base_twist = nh_.advertise<geometry_msgs::Twist>            (pub_base_twist_topic_name, 10);
     pub_arm_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_arm_trajectory_topic_name, 10);
     pub_base_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_base_trajectory_topic_name, 10);
@@ -544,24 +589,21 @@ public:
         }
         case Ready:
         {
-          bool firstTime = true;
           if(is_started_)
           {
-            if (firstTime) {
+            if (is_new_) {
               ros::Duration(1).sleep();
-              firstTime = false;
+              is_new_ = false;
               break;
             }
             
             if (currEnvironment != newEnvironment) {
+              ROS_INFO("Changing Map!");
+              changeMap();
               currEnvironment = newEnvironment;
-              // LoadMap();
             }
 
             ROS_INFO("Ready");
-
-            std_srvs::Empty emptyCall;
-            clear_octomap.call(emptyCall);
 
             // Set Unity Head to Default Position.
             ROS_INFO("HEAD Default Position");
@@ -578,6 +620,7 @@ public:
             ROS_INFO("Task start!");
 
             step_++;
+            step_ = 10;
           }
           break;
         }
@@ -586,9 +629,8 @@ public:
           if(instruction_msg_!="")
           {
             ROS_INFO("%s", instruction_msg_.c_str());
-
+            
             step_++;
-            step_++; // TODO: EnableGoToRoom.
           }
           break;
         }
