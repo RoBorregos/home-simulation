@@ -743,6 +743,8 @@ map<MAP, map<ROOM, map<PLACE, vector<ObjectPlaceInfo>>>> PlacePosesDict ({
         },
       },
     },
+  },
+  {
 MAP::L21_01,
     {
       {
