@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(main_engine)
+project(object_detector)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,18 +8,30 @@ project(main_engine)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  actionlib
+  actionlib_msgs
+  geometry_msgs
+  shape_msgs
+  moveit_msgs
+  moveit_core
+  moveit_ros_planning
+  moveit_ros_planning_interface
+  moveit_ros_perception
   roscpp
+  roslib
   rospy
+  pcl_ros
+  pcl_conversions
   std_msgs
   std_srvs
-  geometry_msgs
-  sensor_msgs
-  trajectory_msgs
-  tf
   message_generation
-  handyman
-  object_detector
-  pick_and_place
+  tf
+  tf2
+  tf2_ros
+  tf2_eigen
+  tf2_geometry_msgs
+  laser_geometry
+  gpd_ros
 )
 
 ## System dependencies are found with CMake's conventions
@@ -56,11 +68,11 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  objectDetection.msg
+  objectDetectionArray.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -70,19 +82,20 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files(
+  FILES
+  DetectObjects3D.action
+)
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
+  actionlib_msgs
+  geometry_msgs
+  shape_msgs
   std_msgs
-  std_srvs
+  gpd_ros
   object_detector
-  pick_and_place
 )
 
 ################################################
@@ -115,10 +128,14 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-#  LIBRARIES main_engine
-  CATKIN_DEPENDS roscpp rospy std_msgs std_srvs
-#  DEPENDS system_lib
+  LIBRARIES
+  INCLUDE_DIRS
+  CATKIN_DEPENDS
+    roscpp
+    roslib
+    message_runtime
+    moveit_core
+    moveit_ros_planning_interface
 )
 
 ###########
@@ -132,9 +149,11 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=shadow")
+
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/main_engine.cpp
+#   src/${PROJECT_NAME}/object_detector.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -145,7 +164,8 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/main_engine_node.cpp)
+add_executable(Detection3D src/Detection3D.cpp)
+add_executable(SaveOctomap src/SaveOctomap.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -156,8 +176,12 @@ include_directories(
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(Detection3D object_detector_generate_messages_cpp gpd_ros_generate_messages_cpp)
+add_dependencies(SaveOctomap object_detector_generate_messages_cpp gpd_ros_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
+target_link_libraries(Detection3D ${catkin_LIBRARIES})
+target_link_libraries(SaveOctomap ${catkin_LIBRARIES})
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
@@ -191,9 +215,11 @@ include_directories(
 # )
 
 ## Mark cpp header files for installation
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-)
+# install(DIRECTORY include/${PROJECT_NAME}/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING PATTERN "*.h"
+#   PATTERN ".svn" EXCLUDE
+# )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
@@ -207,18 +233,10 @@ install(DIRECTORY include/${PROJECT_NAME}/
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_main_engine.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_object_detector.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-
-
-include_directories(include ${catkin_INCLUDE_DIRS})
-link_directories(/usr/local/lib)
-
-add_executable(handyman src/handyman.cpp)
-target_link_libraries(handyman ${catkin_LIBRARIES})
-add_dependencies(handyman handyman_generate_messages_cpp)
