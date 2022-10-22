@@ -1,0 +1,8 @@
+# Define the goal
+string instruction  
+---
+# Define the result
+entities entities
+---
+# Define a feedback message
+bool sended

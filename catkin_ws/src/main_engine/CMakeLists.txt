@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   message_generation
   handyman
+  actionlib_msgs
   object_detector
   pick_and_place
 )
@@ -55,12 +56,11 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+# Generate messages in the 'msg' folder
+add_message_files(
+  FILES
+  entities.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -69,17 +69,17 @@ find_package(catkin REQUIRED COMPONENTS
 #   Service2.srv
 # )
 
-## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+# Generate actions in the 'action' folder
+add_action_files(
+  FILES
+  get_entities.action
+)
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
   std_msgs
+  actionlib_msgs
   std_srvs
   object_detector
   pick_and_place
@@ -117,7 +117,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES main_engine
-  CATKIN_DEPENDS roscpp rospy std_msgs std_srvs
+  CATKIN_DEPENDS message_runtime roscpp rospy std_msgs std_srvs
 #  DEPENDS system_lib
 )
 
