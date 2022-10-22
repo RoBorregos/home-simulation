@@ -97,8 +97,6 @@ enum PLACE {
   WHITE_POTTED_PLANT,
   BROWN_POTTED_PLANT,
   WHEEL_CHAIR,
-  SINK,
-  BODY
 };
 
 enum OBJECT {
@@ -439,7 +437,9 @@ map<MAP, map<ROOM, map<PLACE, NavPose>>> NavPosesDict ({
           {PLACE::TRASH_BOX_FOR_RECYCLE, NavPose(6.535140514373779,  4.1726813316345215, 0.0, 0.0, 0.0,0.7083570707408159, 0.705854276980377)},
           {PLACE::TRASH_BOX_FOR_BOTTLE_CAN, NavPose(7.507297992706299, 4.056127071380615, 0.0, 0.0, 0.0, 0.6865024510727213, 0.7271274885954634)},
           {PLACE::WOODEN_SIDE_TABLE, NavPose(8.413273811340332, 3.472461700439453, 0.0, 0.0, 0.0, -0.04044079334298124, 0.9991819365029525)},
-          {PLACE::SINK, NavPose(8.018427848815918, 1.2233350276947021, 0.0, 0.0, 0.0, -0.0020697884384367963, 0.9999978579856159)},
+          {PLACE::CUSTOM_KITCHEN, NavPose(8.018427848815918, 1.2233350276947021, 0.0, 0.0, 0.0, -0.0020697884384367963, 0.9999978579856159)},
+          {PLACE::BLUE_CUPBOARD, NavPose(8.46084976196289,-1.3802666664123535, 0.0, 0.0, 0.0, 0.026881939232089133, 0.9996386153721365)},
+          {PLACE::WOODEN_CUPBOARD, NavPose(8.789493560791016,-3.297832727432251, 0.0, 0.0, 0.0, 0.030552070891672608,  0.9995331765200344)},
           }
       }
     }
@@ -971,36 +971,49 @@ map<MAP, map<ROOM, map<PLACE, vector<ObjectPlaceInfo>>>> PlacePosesDict ({
           {
             PLACE::DINING_TABLE, 
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(4.72208833694458, 1.1209731101989746, 1.0003609657287598)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(7.613319396972656,-0.433400750160217, 0.8976042270660)),
             }
           },
           {
             PLACE::TRASH_BOX_FOR_RECYCLE, 
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(4.72208833694458, 1.1209731101989746, 1.0003609657287598)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(6.754265308380127, 4.807693004608154, 0.493165850639343)),
             }
           },
           {
             PLACE::TRASH_BOX_FOR_BOTTLE_CAN, 
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(4.72208833694458, 1.1209731101989746, 1.0003609657287598)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose( 7.480559349060059, 4.902200698852539,  0.5196051597595215)),
             }
           },
           {
             PLACE::WOODEN_SIDE_TABLE, 
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(4.72208833694458, 1.1209731101989746, 1.0003609657287598)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(9.330330848693848, 3.451228380203247, 0.3885672092437744)),
             }
           },
           {
-            PLACE::SINK, 
+            PLACE::CUSTOM_KITCHEN, 
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(4.72208833694458, 1.1209731101989746, 1.0003609657287598)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(9.3450326919555668, 0.71959626674652, 0.8593001365661621)),
             }
           },
-          }
-      }
-  }
+          ,
+          {
+            PLACE::BLUE_CUPBOARD, 
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(9.523090362548828, -1.3136205673217773, 0.7166948318481445)),
+            }
+          },
+          ,
+          {
+            PLACE::WOODEN_CUPBOARD, 
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(9.59984302520752,-3.160830020904541, 0.7158498764038086)),
+            }
+          },
+
+
 });
 
 #endif /* NAV_POSES_H_ */
