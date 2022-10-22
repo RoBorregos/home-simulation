@@ -19,111 +19,21 @@
 #include <moveit_msgs/MoveItErrorCodes.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <main_engine/Labels.h>
+#include <main_engine/MoveBaseCb.h>
+#include <main_engine/Detect3DCb.h>
+#include <main_engine/PickCb.h>
+#include <main_engine/PlaceCb.h>
 #include <chrono>
 #include <thread>
 
 using namespace object_detector;
 using namespace pick_and_place;
 using namespace  move_base_msgs;
-typedef actionlib::SimpleActionClient<DetectObjects3DAction> Detect3DClient;
 typedef actionlib::SimpleActionClient<PickAndPlaceAction> PickAndPlaceClient;
-typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
 uint64_t timeSinceEpochMillisec() {
   using namespace std::chrono;
   return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-}
-
-namespace Detect3DCb{
-  static bool active = true;
-  static DetectObjects3DResultConstPtr result;
-  // Called once when the goal completes
-  void doneCb(const actionlib::SimpleClientGoalState& state,
-              const DetectObjects3DResultConstPtr& result)
-  {
-    Detect3DCb::result = result;
-    ROS_INFO("Detect3D - Finished in state [%s]", state.toString().c_str());
-    Detect3DCb::active = false;
-  }
-
-  // Called once when the goal becomes active
-  void activeCb()
-  {
-    ROS_INFO("Detect3D - Goal just went active");
-  }
-
-  // Called every time feedback is received for the goal
-  void feedbackCb(const DetectObjects3DFeedbackConstPtr& feedback)
-  {
-    ROS_INFO("Detect3D - Got Feedback");
-  }
-}
-
-namespace PickCb{
-  static bool active = true;
-  static PickAndPlaceResultConstPtr result;
-  // Called once when the goal completes
-  void doneCb(const actionlib::SimpleClientGoalState& state,
-              const PickAndPlaceResultConstPtr& result)
-  {
-    PickCb::result = result;
-    ROS_INFO("Pick - Finished in state [%s]", state.toString().c_str());
-    PickCb::active = false;
-  }
-
-  // Called once when the goal becomes active
-  void activeCb()
-  {
-    ROS_INFO("Pick - Goal just went active");
-  }
-
-  // Called every time feedback is received for the goal
-  void feedbackCb(const PickAndPlaceFeedbackConstPtr& feedback)
-  {
-    ROS_INFO("Pick - Got Feedback");
-  }
-}
-
-namespace PlaceCb{
-  // Called once when the goal completes
-  void doneCb(const actionlib::SimpleClientGoalState& state,
-              const PickAndPlaceResultConstPtr& result)
-  {
-    ROS_INFO("Place - Finished in state [%s]", state.toString().c_str());
-  }
-
-  // Called once when the goal becomes active
-  void activeCb()
-  {
-    ROS_INFO("Place - Goal just went active");
-  }
-
-  // Called every time feedback is received for the goal
-  void feedbackCb(const PickAndPlaceFeedbackConstPtr& feedback)
-  {
-    ROS_INFO("Place - Got Feedback");
-  }
-}
-
-namespace MoveBaseCb{
-  // Called once when the goal completes
-  void doneCb(const actionlib::SimpleClientGoalState& state,
-              const MoveBaseResultConstPtr& result)
-  {
-    ROS_INFO("MoveBase - Finished in state [%s]", state.toString().c_str());
-  }
-
-  // Called once when the goal becomes active
-  void activeCb()
-  {
-    ROS_INFO("MoveBase - Goal just went active");
-  }
-
-  // Called every time feedback is received for the goal
-  void feedbackCb(const MoveBaseActionFeedbackConstPtr& feedback)
-  {
-    ROS_INFO("MoveBase - Got Feedback");
-  }
 }
 
 bool allTrue(std::vector<bool> values) {
@@ -150,24 +60,13 @@ private:
     TaskFinished,
   };
 
-  const std::string MSG_ARE_YOU_READY    = "Are_you_ready?";
-  const std::string MSG_INSTRUCTION      = "Instruction";
-  const std::string MSG_TASK_SUCCEEDED   = "Task_succeeded";
-  const std::string MSG_TASK_FAILED      = "Task_failed";
-  const std::string MSG_MISSION_COMPLETE = "Mission_complete";
-
-  const std::string MSG_I_AM_READY     = "I_am_ready";
-  const std::string MSG_ROOM_REACHED   = "Room_reached";
-  const std::string MSG_OBJECT_GRASPED = "Object_grasped";
-  const std::string MSG_TASK_FINISHED  = "Task_finished";
-
-  trajectory_msgs::JointTrajectory arm_joint_trajectory_;
-
   int step_;
   int force_step_;
 
   std::string instruction_msg_;
 
+  string currEnvironment = "";
+  string newEnvironment = "";
   bool is_started_;
   bool is_finished_;
   bool is_failed_;
@@ -201,16 +100,7 @@ private:
 
   void init()
   {
-    // Arm Joint Trajectory
-    std::vector<std::string> arm_joint_names {"arm_lift_joint", "arm_flex_joint", "arm_roll_joint", "wrist_flex_joint", "wrist_roll_joint"};
-
-    trajectory_msgs::JointTrajectoryPoint arm_joint_point;
-
-    arm_joint_trajectory_.joint_names = arm_joint_names;
-    arm_joint_trajectory_.points.push_back(arm_joint_point);
-
     step_ = Initialize;
-
     reset();
   }
 
@@ -220,10 +110,6 @@ private:
     is_started_  = false;
     is_finished_ = false;
     is_failed_   = false;
-
-    std::vector<double> arm_positions { 0.0, 0.0, 1.5708, -1.5708, 0.0 };
-    arm_joint_trajectory_.points[0].positions = arm_positions;
-    arm_joint_trajectory_.points[0].time_from_start = ros::Duration(1.75);
   }
 
 
@@ -231,32 +117,36 @@ private:
   {
     ROS_INFO("Subscribe message:%s, %s", message->message.c_str(), message->detail.c_str());
 
-    if(message->message.c_str()==MSG_ARE_YOU_READY)
+    if(message->message.c_str()==MSG::ARE_YOU_READY)
     {
       if(step_==Ready)
       {
         is_started_ = true;
       }
     }
-    if(message->message.c_str()==MSG_INSTRUCTION)
+    if(message->message.c_str()==MSG::ENVIRONMENT)
+    {
+      newEnvironment = message->detail;
+    }
+    if(message->message.c_str()==MSG::INSTRUCTION)
     {
       if(step_==WaitForInstruction)
       {
         instruction_msg_ = message->detail.c_str();
       }
     }
-    if(message->message.c_str()==MSG_TASK_SUCCEEDED)
+    if(message->message.c_str()==MSG::TASK_SUCCEEDED)
     {
       if(step_==TaskFinished)
       {
         is_finished_ = true;
       }
     }
-    if(message->message.c_str()==MSG_TASK_FAILED)
+    if(message->message.c_str()==MSG::TASK_FAILED)
     {
       is_failed_ = true;
     }
-    if(message->message.c_str()==MSG_MISSION_COMPLETE)
+    if(message->message.c_str()==MSG::MISSION_COMPLETE)
     {
       exit(EXIT_SUCCESS);
     }
@@ -326,22 +216,6 @@ private:
     handyman::HandymanMsg handyman_msg;
     handyman_msg.message = message;
     publisher.publish(handyman_msg);
-  }
-
-  tf::StampedTransform getTfBase(tf::TransformListener &tf_listener)
-  {
-    tf::StampedTransform tf_transform;
-
-    try
-    {
-      tf_listener.lookupTransform("/odom", "/base_footprint", ros::Time(0), tf_transform);
-    }
-    catch (tf::TransformException &ex)
-    {
-      ROS_ERROR("%s",ex.what());
-    }
-
-    return tf_transform;
   }
 
   void stopBase(ros::Publisher &publisher)
@@ -483,16 +357,6 @@ private:
     last_x = positions[1];
     last_y = positions[2];
     last_t = timeSinceEpochMillisec();
-    // std::vector<std::string> joint_names {"odom_r", "odom_x", "odom_y"};
-
-    // trajectory_msgs::JointTrajectoryPoint point;
-    // point.positions = positions;
-    // point.time_from_start = duration;
-
-    // trajectory_msgs::JointTrajectory joint_trajectory;
-    // joint_trajectory.joint_names = joint_names;
-    // joint_trajectory.points.push_back(point);
-    // publisher.publish(joint_trajectory);
   }
 
   void moveBase(ros::Publisher &publisher, double linear_x, double linear_y, double angular_z, double time_ms)
@@ -573,31 +437,6 @@ private:
     return false;
   }
 
-  void rotateTowardsPoint(geometry_msgs::Point point_) {
-    tf::TransformListener tf_listener;
-    tf::StampedTransform tf_transform = getTfBase(tf_listener);
-    tf::Vector3 dest(point_.x, point_.y, point_.z);
-    tf::Vector3 origin(tf_transform.getOrigin().x(), tf_transform.getOrigin().y(), tf_transform.getOrigin().z());
-    origin.normalize();
-    dest.normalize();
-    geometry_msgs::Quaternion q;
-    tf::Vector3 res = origin.cross(dest);
-    q.x = res.getX();
-    q.y = res.getY();
-    q.z = res.getZ();
-    q.w = sqrt((origin.length() * origin.length()) * (dest.length() * dest.length())) + origin.dot(dest);
-
-    geometry_msgs::PoseStamped target_pose;
-    target_pose.header.frame_id = "map";
-    target_pose.header.stamp = ros::Time::now();
-    target_pose.pose.position.x = origin.getX();
-    target_pose.pose.position.y = origin.getY();
-    target_pose.pose.position.z = origin.getZ();
-    target_pose.pose.orientation = q;
-
-    moveRobot(target_pose);
-  }
-
 public:
 
   HandymanMain(): 
@@ -660,15 +499,15 @@ public:
     moveit::planning_interface::MoveGroupInterface move_head("head"); move_head_ = &move_head;
     moveit::planning_interface::MoveGroupInterface move_hand("hand"); move_hand_ = &move_hand;
     moveit::planning_interface::MoveGroupInterface move_all("whole_body"); move_all_ = &move_all;
-    ros::Subscriber sub_msg                = nh_.subscribe<handyman::HandymanMsg>(sub_msg_to_robot_topic_name, 100, &HandymanMain::messageCallback, this);
-    ros::Publisher  pub_msg                = nh_.advertise<handyman::HandymanMsg>(pub_msg_to_moderator_topic_name, 10);
-    pub_base_twist         = nh_.advertise<geometry_msgs::Twist>            (pub_base_twist_topic_name, 10);
-    pub_arm_trajectory     = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_arm_trajectory_topic_name, 10);
-    pub_base_trajectory     = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_base_trajectory_topic_name, 10);
+    ros::Subscriber sub_msg = nh_.subscribe<handyman::HandymanMsg>(sub_msg_to_robot_topic_name, 100, &HandymanMain::messageCallback, this);
+    ros::Publisher  pub_msg = nh_.advertise<handyman::HandymanMsg>(pub_msg_to_moderator_topic_name, 10);
+    pub_base_twist = nh_.advertise<geometry_msgs::Twist>            (pub_base_twist_topic_name, 10);
+    pub_arm_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_arm_trajectory_topic_name, 10);
+    pub_base_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_base_trajectory_topic_name, 10);
     pub_gripper_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_gripper_trajectory_topic_name, 10);   
     pub_head_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_head_trajectory_topic_name, 10);   
-    ros::Subscriber sub_trajectories       = nh_.subscribe<sensor_msgs::JointState>(sub_trajectories_topic_name, 100, &HandymanMain::trajectoriesCallback, this);
-    ros::ServiceClient client_grasping     = nh_.serviceClient<gpd_ros::detect_grasps_samples>("/detect_grasps_server_samples/detect_grasps_samples");
+    ros::Subscriber sub_trajectories = nh_.subscribe<sensor_msgs::JointState>(sub_trajectories_topic_name, 100, &HandymanMain::trajectoriesCallback, this);
+    ros::ServiceClient client_grasping = nh_.serviceClient<gpd_ros::detect_grasps_samples>("/detect_grasps_server_samples/detect_grasps_samples");
     ROS_INFO("Waiting for Client Grasping Service!");
     client_grasping.waitForExistence();
 
@@ -679,10 +518,10 @@ public:
     std::thread t1(&HandymanMain::checkBase, this);
     while (ros::ok() && force_step_ == 100)
     {
-
       ros::spinOnce();
       loop_rate.sleep();
     }
+
     while (ros::ok())
     {
       if(is_failed_)
@@ -705,8 +544,20 @@ public:
         }
         case Ready:
         {
+          bool firstTime = true;
           if(is_started_)
           {
+            if (firstTime) {
+              ros::Duration(1).sleep();
+              firstTime = false;
+              break;
+            }
+            
+            if (currEnvironment != newEnvironment) {
+              currEnvironment = newEnvironment;
+              // LoadMap();
+            }
+
             ROS_INFO("Ready");
 
             std_srvs::Empty emptyCall;
@@ -722,7 +573,7 @@ public:
             ROS_INFO("ARM Default Position");
             moveArm(vector<double>({ 0.0, 0.0, 1.5708, -1.5708, 0.0 }));
 
-            sendMessage(pub_msg, MSG_I_AM_READY);
+            sendMessage(pub_msg, MSG::I_AM_READY);
 
             ROS_INFO("Task start!");
 
@@ -775,14 +626,7 @@ public:
             // srvEOctomap.request.enable = false;
             // enable_octomap.call(srvEOctomap);
 
-            DetectObjects3DGoal goal;
-            ROS_INFO("Executing 3D Vision");
-            Detect3DCb::active = true;
-            ac_detection3D.sendGoal(goal, &Detect3DCb::doneCb, &Detect3DCb::activeCb, &Detect3DCb::feedbackCb);
-            while(Detect3DCb::active) {
-              loop_rate.sleep();
-              continue;
-            }
+            Detect3DCb::execute(ac_detection3D);
             if (Detect3DCb::result == NULL || Detect3DCb::result->object_cloud.samples.size() == 0) {
               ROS_INFO_STREAM("No object found");
               step_++;
@@ -791,40 +635,29 @@ public:
 
             gpd_ros::detect_grasps_samples srv_grasps;
             srv_grasps.request.cloud_samples = Detect3DCb::result->object_cloud;
-            ROS_INFO_STREAM("Result Samples: " << srv_grasps.request.cloud_samples.samples.size());
             if (client_grasping.call(srv_grasps)) {
               gpd_ros::GraspConfigList grasp_configs = srv_grasps.response.grasp_configs;
               if (grasp_configs.grasps.size() != 0) {
-                ROS_INFO_STREAM("Received grasps: " << grasp_configs.grasps.size());
-                PickAndPlaceGoal goalPick;
-                goalPick.grasp_config_list = grasp_configs;
-                goalPick.object_name = "current";
-                goalPick.allow_contact_with = {"<octomap>"}; // TODO: Add table.
-                PickCb::active = true;
-                ac_pick.sendGoal(goalPick, &PickCb::doneCb, &PickCb::activeCb, &PickCb::feedbackCb);
-                ROS_INFO_STREAM("Grasps Sended.");
-                while(PickCb::active) {
-                  loop_rate.sleep();
+                status_code = PickCb::execute(grasp_configs, ac_pick);
+                attempts -= 1;
+                if (status_code == moveit_msgs::MoveItErrorCodes::PLANNING_FAILED ||
+                  status_code == moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN) {
+                  attempts = 0;
                   continue;
                 }
-                attempts -= 1;
-                status_code = PickCb::result->error_code;
-                if (status_code == moveit_msgs::MoveItErrorCodes::PLANNING_FAILED || status_code == moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN) {
-                  attempts = 0;
-                }
                 if (status_code == moveit_msgs::MoveItErrorCodes::SUCCESS) {
-                  ROS_INFO_STREAM("Grasp SUCCESSFULL");
+                  ROS_INFO_STREAM("GRASP SUCCESS");
                 }else {
-                  ROS_INFO_STREAM("Grasp Failed. Remaining Attempts" << attempts);  
+                  ROS_INFO_STREAM("GRASP FAILED: #" << attempts);  
                 }
               } else {
                 ROS_INFO_STREAM("No grasps received");
-                step_++;
-                break;
+                attempts -= 1;
               }
             }
             else {
               ROS_ERROR("Failed to call service client_grasping");
+              attempts -= 1;
             }
           }
           step_++;
@@ -832,25 +665,31 @@ public:
         }
         case Place:
         {
-          PickAndPlaceGoal goalPlace;
-          geometry_msgs::PoseStamped* target_pose = &goalPlace.target_pose;
-          target_pose->header.frame_id = "map";
-          target_pose->header.stamp = ros::Time::now();
-          target_pose->pose.position.x = 0.4280264973640442;
-          target_pose->pose.position.y = 0.5202085375785828;
-          target_pose->pose.position.z = 0.5050736665725708 + 0.1; // Add Table Margin
-          tf::StampedTransform transform;
-          listener_.lookupTransform("/map", "/base_footprint", ros::Time(0), transform);
-          tf::Quaternion currentRotation = transform.getRotation();
-          target_pose->pose.orientation.x = currentRotation.getX();
-          target_pose->pose.orientation.y = currentRotation.getY();
-          target_pose->pose.orientation.z = currentRotation.getZ();
-          target_pose->pose.orientation.w = currentRotation.getW();
+          int status_code = -1;
+          int attempts = 3;
 
-          goalPlace.object_name = "current";
-          goalPlace.allow_contact_with = {"<octomap>"}; // TODO: Add table.
-          ac_place.sendGoal(goalPlace, &PlaceCb::doneCb, &PlaceCb::activeCb, &PlaceCb::feedbackCb);
-          ROS_INFO_STREAM("Place Sended.");
+          geometry_msgs::PoseStamped target_pose;
+          target_pose.header.frame_id = "map";
+          target_pose.header.stamp = ros::Time::now();
+          target_pose.pose.position.x = 0.4280264973640442;
+          target_pose.pose.position.y = 0.5202085375785828;
+          target_pose.pose.position.z = 0.5050736665725708 + 0.1; // Add Table Margin
+          
+          while (status_code < 0 && attempts > 0) {
+            status_code = PlaceCb::execute(target_pose, ac_pick, listener_);
+            attempts -= 1;
+            if (status_code == moveit_msgs::MoveItErrorCodes::PLANNING_FAILED ||
+              status_code == moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN) {
+              attempts = 0;
+              continue;
+            }
+            if (status_code == moveit_msgs::MoveItErrorCodes::SUCCESS) {
+              ROS_INFO_STREAM("GRASP SUCCESS");
+            }else {
+              ROS_INFO_STREAM("GRASP FAILED: #" << attempts);  
+            }
+          }
+          
           step_++;
           break;
         }

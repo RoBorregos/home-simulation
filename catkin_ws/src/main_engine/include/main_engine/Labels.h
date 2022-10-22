@@ -1,12 +1,23 @@
-#ifndef NAV_POSES_H_
-#define NAV_POSES_H_
+#ifndef LABELS_H_
+#define LABELS_H_
 
-#include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Pose.h>
 #include <map>
 
 using namespace std;
 
+namespace MSG {
+  const std::string ARE_YOU_READY    = "Are_you_ready?";
+  const std::string INSTRUCTION      = "Instruction";
+  const std::string TASK_SUCCEEDED   = "Task_succeeded";
+  const std::string TASK_FAILED      = "Task_failed";
+  const std::string MISSION_COMPLETE = "Mission_complete";
+  const std::string I_AM_READY     = "I_am_ready";
+  const std::string ROOM_REACHED   = "Room_reached";
+  const std::string OBJECT_GRASPED = "Object_grasped";
+  const std::string TASK_FINISHED  = "Task_finished";
+  const std::string ENVIRONMENT  = "Environment";
+} 
 
 enum MAP {
   L20_01,
@@ -256,10 +267,35 @@ struct NavPose
     val.pose.orientation.y = oy;
     val.pose.orientation.z = oz;
     val.pose.orientation.w = ow;
+  }
+  NavPose(float px, float py, float pz){
+    val.header.frame_id = "map";
+    val.pose.position.x = px;
+    val.pose.position.y = py;
+    val.pose.position.z = pz;
+    val.pose.orientation.x = 0.0;
+    val.pose.orientation.y = 0.0;
+    val.pose.orientation.z = 0.0;
+    val.pose.orientation.w = 0.0;
   } 
   geometry_msgs::PoseStamped val;
 };
 
+struct ObjectPlaceInfo
+{
+  ObjectPlaceInfo(){}
+  ObjectPlaceInfo(PREPOSITION prep_, string ref_1_, string ref_2_, NavPose val_):
+    prep(prep_), val(val_), ref_1(ref_1_), ref_2(ref_2_)
+  {
+    
+  }
+  NavPose val;
+  PREPOSITION prep;
+  string ref_1;
+  string ref_2;
+};
+
+// Posiciones en todos los PLACES  de cada cuarto con una distancia de 50cm aproximadamente;
 map<MAP, map<ROOM, map<PLACE, NavPose>>> NavPosesDict ({
   {
     MAP::L20_01,
@@ -279,25 +315,27 @@ map<MAP, map<ROOM, map<PLACE, NavPose>>> NavPosesDict ({
   }
 });
 
-// map<MAP, map<PLACE, map<PREPOSITION, map<PLACE, NavPose>>>> PlacePosesDict ({
-//   {
-//     MAP::L20_01,
-//     {
-//       {
-//         PLACE::SQUARE_LOW_TABLE, {
-//           {
-//             PREPOSITION::NEXT_TO_THE,
-//             {PLACE::SQUARE_LOW_TABLE, NavPose(2.09310, 0.18493, 0.0, 0.0, 0.0, 0.87606, -0.48218)},
-//           },
-//         }
-//       },
-//       {
-//         ROOM::BEDROOM, {
-//           {PLACE::SQUARE_LOW_TABLE, NavPose(2.09310, 0.18493, 0.0, 0.0, 0.0, 0.87606, -0.48218)}
-//         }
-//       },
-//     }
-//   }
-// });
 
-#endif /* NAV_POSES_H_ */
+// Definir para cada DESTINATION (13)
+// el mayor número de preposiciones posibles considerando todos los PLACES.
+map<MAP, map<ROOM, map<PLACE, vector<ObjectPlaceInfo>>>> PlacePosesDict ({
+  {
+    MAP::L20_01,
+    {
+      {
+        ROOM::BEDROOM, {
+          {
+            PLACE::SQUARE_LOW_TABLE,
+            {
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(2.09310, 0.18493, 0.0)),
+              ObjectPlaceInfo(PREPOSITION::NEXT_TO_THE, "sofa", "", NavPose(2.09310, 0.18493, 0.0)),
+              ObjectPlaceInfo(PREPOSITION::NEXT_TO_THE, "wooden_shelf", "", NavPose(2.09310, 0.18493, 0.0)),
+            }
+          },
+        },
+      },
+    }
+  }
+});
+
+#endif /* LABELS_H_ */
