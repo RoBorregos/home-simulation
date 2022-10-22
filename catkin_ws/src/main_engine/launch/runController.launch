@@ -1,0 +1,34 @@
+<launch>
+
+	<!-- Handyman -->
+	<arg name="sub_msg_to_robot_topic_name"       default="/handyman/message/to_robot" />
+	<arg name="pub_msg_to_moderator_topic_name"   default="/handyman/message/to_moderator" />
+	<arg name="pub_base_twist_topic_name"         default="/hsrb/command_velocity" />
+	<arg name="pub_arm_trajectory_topic_name"     default="/hsrb/arm_trajectory_controller/command" />
+	<arg name="pub_gripper_trajectory_topic_name" default="/hsrb/gripper_controller/command" />
+
+	<node name="handyman" pkg="main_engine" type="handyman" output="screen" launch-prefix="gnome-terminal -t 'Running' -e">
+		<param name="sub_msg_to_robot_topic_name"       type="string" value="$(arg sub_msg_to_robot_topic_name)" />
+		<param name="pub_msg_to_moderator_topic_name"   type="string" value="$(arg pub_msg_to_moderator_topic_name)" />
+		<param name="pub_base_twist_topic_name"         type="string" value="$(arg pub_base_twist_topic_name)" />
+		<param name="pub_arm_trajectory_topic_name"     type="string" value="$(arg pub_arm_trajectory_topic_name)" />
+		<param name="pub_gripper_trajectory_topic_name" type="string" value="$(arg pub_gripper_trajectory_topic_name)" />
+		<param name="force_step" type="int" value="100" />
+	</node>
+
+	<!-- Detection3D -->
+	<node name="Detection3D" pkg="object_detector" type="Detection3D" respawn="true" output="screen">
+		<remap from="/camera/depth/points" to="/hsrb/head_rgbd_sensor/depth_registered/points"/>
+	</node>
+
+	<!-- GPD -->
+	<node name="detect_grasps_server_samples" pkg="gpd_ros" type="detect_grasps_server_samples" output="screen" respawn="true">
+    <!-- Filepath to the configuration file for GPD -->
+    <param name="config_file" value="/media/jose/BAA21AD5A21A95CB/Roborregos/IROS/lib/gpd/cfg/ros_eigen_params.cfg" />
+    <param name="rviz_topic" value="plot_grasps" />
+  </node>
+
+	<!-- Grasping PickAnd Place -->
+  <node name="pick_and_place_server" pkg="pick_and_place" type="pick_and_place_server.py" output="screen" respawn="true" />
+
+</launch>

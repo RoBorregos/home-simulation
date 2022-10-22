@@ -3,7 +3,7 @@
   <arg name="paused" default="false"/>
   <arg name="gazebo_gui" default="true"/>
   <arg name="initial_joint_positions" doc="Initial joint configuration of the robot"
-       default=" -J arm_flex_joint 0 -J arm_lift_joint 0 -J arm_roll_joint 0 -J hand_motor_joint 1.0598 -J wrist_flex_joint 0 -J wrist_roll_joint 0"/>
+       default=" -J arm_flex_joint 0 -J arm_lift_joint 0 -J arm_roll_joint 0.1378 -J hand_motor_joint 1.0598 -J head_pan_joint 0 -J head_tilt_joint 0 -J wrist_flex_joint -1.5557 -J wrist_roll_joint 0"/>
 
   <!-- startup simulated world -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">

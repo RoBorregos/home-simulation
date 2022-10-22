@@ -40,4 +40,29 @@
   <include file="$(find hsr_moveit_config)/launch/demo.launch" > 
 	</include>
 
+	<!-- NavStack -->
+  <include file="$(find nav_main)/launch/base_control.launch" > 
+	</include>
+
+	<!-- Detection3D -->
+	<node 
+        pkg="tf" 
+        type="static_transform_publisher" 
+        name="odom_broadcaster" 
+        args="0 0 0 0 0 0 1 map odom 20" 
+    />
+	<node name="Detection3D" pkg="object_detector" type="Detection3D" respawn="true" output="screen">
+		<remap from="/camera/depth/points" to="/hsrb/head_rgbd_sensor/depth_registered/points"/>
+	</node>
+
+	<!-- GPD -->
+	<node name="detect_grasps_server_samples" pkg="gpd_ros" type="detect_grasps_server_samples" output="screen" respawn="true">
+    <!-- Filepath to the configuration file for GPD -->
+    <param name="config_file" value="/media/jose/BAA21AD5A21A95CB/Roborregos/IROS/lib/gpd/cfg/ros_eigen_params.cfg" />
+    <param name="rviz_topic" value="plot_grasps" />
+  </node>
+
+	<!-- Grasping PickAnd Place -->
+  <node name="pick_and_place_server" pkg="pick_and_place" type="pick_and_place_server.py" output="screen" respawn="true" />
+
 </launch>

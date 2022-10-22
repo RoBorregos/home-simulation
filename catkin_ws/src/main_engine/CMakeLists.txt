@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  std_srvs
   geometry_msgs
   sensor_msgs
   trajectory_msgs
@@ -18,6 +19,8 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   handyman
   actionlib_msgs
+  object_detector
+  pick_and_place
 )
 
 ## System dependencies are found with CMake's conventions
@@ -77,6 +80,9 @@ generate_messages(
   DEPENDENCIES
   std_msgs
   actionlib_msgs
+  std_srvs
+  object_detector
+  pick_and_place
 )
 
 ################################################
@@ -109,9 +115,9 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES main_engine
- CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS message_runtime roscpp rospy std_msgs std_srvs
 #  DEPENDS system_lib
 )
 
@@ -185,11 +191,9 @@ include_directories(
 # )
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES

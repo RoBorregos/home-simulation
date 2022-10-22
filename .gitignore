@@ -11,3 +11,5 @@ rasa/venv/*
 rasa/models/*
 rasa/.rasa/*
 rasa/actions/__pycache__/*
+catkin_ws/src/manipulation/object_detector/models
+catkin_ws/src/manipulation/object_detector/resources
