@@ -44,7 +44,7 @@ int main(int argc, char **argv)
   while (ros::ok())
   {
     //Receive Type of map
-    if(mapID.data=="Layout2020HM01" && enter == true){
+    if(mapID.data=="Layout2020HM01" && newmap == true){
       // Now change the map
       nav_msgs::LoadMap::Request  req;
       nav_msgs::LoadMap::Response resp;
