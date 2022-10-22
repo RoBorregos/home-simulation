@@ -44,11 +44,11 @@ int main(int argc, char **argv)
   while (ros::ok())
   {
     //Receive Type of map
-    if(mapID.data=="Layout2020HM01"){
+    if(mapID.data=="Layout2020HM01" && newmap == true){
       // Now change the map
       nav_msgs::LoadMap::Request  req;
       nav_msgs::LoadMap::Response resp;
-      req.map_url = ros::package::getPath("nav_main") + "/maps/Layout2019HM01.yaml";
+      req.map_url = ros::package::getPath("nav_main") + "/maps/Layout2020HM01.yaml";
       ros::service::waitForService("change_map", 5000);
       ros::service::call("change_map", req, resp);
       pose.header.frame_id = fixed_frame;
@@ -63,11 +63,11 @@ int main(int argc, char **argv)
       set_pose_pub.publish(pose);
       newmap = false;
     }
-    else if(mapID.data=="Layout2019HM01"){
+    else if(mapID.data=="Layout2019HM01" && newmap == true){
         //Change map
       nav_msgs::LoadMap::Request  req;
       nav_msgs::LoadMap::Response resp;
-      req.map_url = ros::package::getPath("nav_main") + "/maps/Layout2021HM01.yaml";
+      req.map_url = ros::package::getPath("nav_main") + "/maps/Layout2019HM01.yaml";
       ros::service::waitForService("change_map", 5000);
       ros::service::call("change_map", req, resp);
       pose.header.frame_id = fixed_frame;
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
         //Change map
         nav_msgs::LoadMap::Request  req;
         nav_msgs::LoadMap::Response resp;
-        req.map_url = ros::package::getPath("nav_main") + "/maps/Layout2019HM02.yaml";
+        req.map_url = ros::package::getPath("nav_main") + "/maps/Layout2021HM01.yaml";
         ros::service::waitForService("change_map", 5000);
         ros::service::call("change_map", req, resp);
         pose.header.frame_id = fixed_frame;
@@ -100,11 +100,11 @@ int main(int argc, char **argv)
         pose.pose.pose.orientation.w = 0.9998408334743851;
         set_pose_pub.publish(pose);
     }
-    else if(mapID.data=="LayoutD" && newmap == true){
+    else if(mapID.data=="Layout2019HM02" && newmap == true){
         //Change map
         nav_msgs::LoadMap::Request  req;
         nav_msgs::LoadMap::Response resp;
-        req.map_url = ros::package::getPath("nav_main") + "/maps/roborregosmapD.yaml";
+        req.map_url = ros::package::getPath("nav_main") + "/maps/Layout2019HM02.yaml";
         ros::service::waitForService("change_map", 5000);
         ros::service::call("change_map", req, resp);
         pose.header.frame_id = fixed_frame;
