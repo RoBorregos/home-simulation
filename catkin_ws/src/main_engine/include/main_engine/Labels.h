@@ -17,7 +17,9 @@ namespace MSG {
   const std::string OBJECT_GRASPED = "Object_grasped";
   const std::string TASK_FINISHED  = "Task_finished";
   const std::string ENVIRONMENT  = "Environment";
-} 
+}
+
+
 
 enum MAP {
   L20_01,
@@ -147,6 +149,16 @@ map<string, MAP> maps ({
   {"Layout2019HM01", MAP::L19_01},
   {"Layout2021HM01", MAP::L21_01},
   {"Layout2019HM02", MAP::L19_01},
+});
+
+map<string, PREPOSITION> prepositions ({
+  {"next_to_the", PREPOSITION::NEXT_TO_THE},
+  {"on_the", PREPOSITION::ON_THE},
+  {"in_the", PREPOSITION::IN_THE},
+  {"under_the", PREPOSITION::UNDER_THE},
+  {"close_to_the", PREPOSITION::CLOSE_TO_THE},
+  {"between", PREPOSITION::BETWEEN},
+  {"in_front_of", PREPOSITION::IN_FRONT_OF},
 });
 
 map<string, ROOM> rooms ({

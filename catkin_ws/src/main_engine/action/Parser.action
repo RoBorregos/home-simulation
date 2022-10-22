@@ -2,7 +2,7 @@
 string instruction  
 ---
 # Define the result
-entities entities
+Entities entities
 ---
 # Define a feedback message
 bool sended

@@ -59,7 +59,7 @@ find_package(catkin REQUIRED COMPONENTS
 # Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  entities.msg
+  Entities.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -72,7 +72,7 @@ add_message_files(
 # Generate actions in the 'action' folder
 add_action_files(
   FILES
-  get_entities.action
+  Parser.action
 )
 
 ## Generate added messages and services with any dependencies listed here
