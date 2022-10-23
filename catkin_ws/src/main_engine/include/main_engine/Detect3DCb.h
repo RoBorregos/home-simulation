@@ -29,10 +29,11 @@ namespace Detect3DCb{
     ROS_INFO("Detect3D - Got Feedback");
   }
 
-  void execute(Detect3DClient &ac_detection3D)
+  void execute(Detect3DClient &ac_detection3D, object_detector::objectDetectionArray force_object)
   {
     ros::Rate loop_rate(10);
     DetectObjects3DGoal goal;
+    goal.force_object = force_object;
     ROS_INFO("Executing 3D Vision");
     Detect3DCb::active = true;
     ac_detection3D.sendGoal(goal, &Detect3DCb::doneCb, &Detect3DCb::activeCb, &Detect3DCb::feedbackCb);

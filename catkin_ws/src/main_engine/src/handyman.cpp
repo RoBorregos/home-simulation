@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Bool.h>
 #include <std_srvs/Empty.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
@@ -13,6 +14,8 @@
 #include <nodelet/nodelet.h>
 #include <actionlib/client/simple_action_client.h>
 #include <object_detector/DetectObjects3DAction.h>
+#include <object_detector/objectDetectionArray.h>
+#include <object_detector/objectDetection.h>
 #include <pick_and_place/PickAndPlaceAction.h>
 #include <pick_and_place/EnableOctomap.h>
 #include <gpd_ros/detect_grasps_samples.h>
@@ -49,6 +52,10 @@ bool allTrue(std::vector<bool> values) {
   return true;
 }
 
+const bool PARSER_ENABLE = false;
+const bool DETECTION_ENABLE = false;
+const bool MOVE_BASE_ENABLE = false;
+
 class HandymanMain
 {
 private:
@@ -58,10 +65,14 @@ private:
     Ready,
     WaitForInstruction,
     GoToRoom1,
+    Exploration,
     Grasp,
+    GoToRoom2,
     Place,
     ComeBack,
     TaskFinished,
+    GiveUp,
+    Wait,
   };
 
   int step_;
@@ -76,6 +87,7 @@ private:
   bool is_finished_;
   bool is_failed_;
 
+  ros::Publisher  pub_active_2D;
   ros::Publisher  pub_arm_trajectory;
   ros::Publisher  pub_base_trajectory;
   ros::Publisher  pub_gripper_trajectory;
@@ -87,6 +99,10 @@ private:
 
   uint64_t valid_till = 0.0;
   bool is_moving = false;
+  TaskInfo currentTask;
+  OBJECT targetDetection;
+  bool targetDetectionFound = false;
+  vector<double> headTargetDetectionFound = vector<double>({0.0, -0.6887});
 
   // clear_octomap
   ros::ServiceClient clear_octomap;
@@ -117,8 +133,18 @@ private:
     is_new_ = true;
     is_finished_ = false;
     is_failed_   = false;
+    disable2D();
   }
 
+
+  void detectionsCallback(const object_detector::objectDetectionArray::ConstPtr& msg)
+  {
+    for (auto detection : msg->detections) {
+      if (detection.labelText == objectsr[targetDetection]) {
+        targetDetectionFound = true;
+      }
+    }
+  }
 
   void messageCallback(const handyman::HandymanMsg::ConstPtr& message)
   {
@@ -428,20 +454,7 @@ private:
   }
 
   bool moveRobot(geometry_msgs::PoseStamped target) {
-    move_base_msgs::MoveBaseGoal goal;
-    goal.target_pose = target;
-
-    ROS_INFO("Sending goal");
-    ac_move.sendGoal(goal);
-    ac_move.waitForResult();
-
-    if(ac_move.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
-      ROS_INFO("Move Robot Successfull");
-      return true;
-    }
-    
-    ROS_INFO("Move Robot Failed");
-    return false;
+    return MoveBaseCb::execute(target, ac_move);
   }
 
   void setInitialPose() {
@@ -454,8 +467,8 @@ private:
     pose.pose.pose.position.z = 0;
     pose.pose.pose.orientation.x = 0;
     pose.pose.pose.orientation.y = 0;
-    pose.pose.pose.orientation.z = -0.017841180377059222;
-    pose.pose.pose.orientation.w = 0.9998408334743851;
+    pose.pose.pose.orientation.z = 0;
+    pose.pose.pose.orientation.w = 1;
     pub_initial_pose.publish(pose);
   }
 
@@ -478,6 +491,55 @@ private:
     }
   }
 
+  void enable2D() {
+    std_msgs::Bool val;val.data = true;
+    pub_active_2D.publish(std_msgs::Bool(val));    
+  }
+  void disable2D() {
+    std_msgs::Bool val;val.data = false;
+    pub_active_2D.publish(std_msgs::Bool(val));    
+  }
+
+  bool explorePlace(NavPose targetPose) {
+    if (moveRobot(targetPose.val)){
+      // Enable 2D.
+      targetDetection = currentTask.GRASP_OBJ;
+      targetDetectionFound = false;
+      enable2D();
+      ros::Duration(5).sleep();
+
+      if (targetDetectionFound) {
+        disable2D();
+        step_=Grasp;
+        headTargetDetectionFound = vector<double>({0.0 -0.6887});
+        return true;
+      }
+      // Check Left.
+      ROS_INFO("HEAD Left Position");
+      moveHead(vector<double>({0.5, -0.6887}));
+      if (targetDetectionFound) {
+        disable2D();
+        headTargetDetectionFound = vector<double>({0.5, -0.6887});
+        step_=Grasp;
+        return true;
+      }
+      // Check Right.
+      ROS_INFO("HEAD Right Position");
+      moveHead(vector<double>({-0.5, -0.6887}));
+      if (targetDetectionFound) {
+        disable2D();
+        headTargetDetectionFound = vector<double>({-0.5, -0.6887});
+        step_=Grasp;
+        return true;
+      }
+      // Default.
+      ROS_INFO("HEAD Default Position");
+      moveHead(vector<double>({0.0, -0.6887}));
+      disable2D();
+    }
+    return false;
+  }
+
 public:
 
   HandymanMain(): 
@@ -492,11 +554,15 @@ public:
     ROS_INFO("Waiting for Pick action server to start.");
     ac_pick.waitForServer();
     ROS_INFO("Waiting for Parser action server to start.");
-    ac_parser.waitForServer();
+    if (PARSER_ENABLE) {
+      ac_parser.waitForServer();
+    }
     ROS_INFO("Waiting for Place action server to start.");
     ac_place.waitForServer();
-    // ROS_INFO("Waiting for Move Base action server to start.");
-    // ac_move.waitForServer();
+    ROS_INFO("Waiting for Move Base action server to start.");
+    if (MOVE_BASE_ENABLE) {
+      ac_move.waitForServer();
+    }
 
     ROS_INFO("Waiting for Clear Octomap service to start.");
     clear_octomap = nh_.serviceClient<std_srvs::Empty>("/clear_octomap");
@@ -544,9 +610,11 @@ public:
     moveit::planning_interface::MoveGroupInterface move_hand("hand"); move_hand_ = &move_hand;
     moveit::planning_interface::MoveGroupInterface move_all("whole_body"); move_all_ = &move_all;
     ros::Subscriber sub_msg = nh_.subscribe<handyman::HandymanMsg>(sub_msg_to_robot_topic_name, 100, &HandymanMain::messageCallback, this);
+    ros::Subscriber sub_detections = nh_.subscribe<object_detector::objectDetectionArray>("/detections", 100, &HandymanMain::detectionsCallback, this);
     ros::Publisher  pub_msg = nh_.advertise<handyman::HandymanMsg>(pub_msg_to_moderator_topic_name, 10);
     pub_initial_pose = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1000);
-    pub_base_twist = nh_.advertise<geometry_msgs::Twist>            (pub_base_twist_topic_name, 10);
+    pub_active_2D = nh_.advertise<std_msgs::Bool>("detectionsActive", 10);
+    pub_base_twist = nh_.advertise<geometry_msgs::Twist>(pub_base_twist_topic_name, 10);
     pub_arm_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_arm_trajectory_topic_name, 10);
     pub_base_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_base_trajectory_topic_name, 10);
     pub_gripper_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_gripper_trajectory_topic_name, 10);   
@@ -584,7 +652,14 @@ public:
         {
           ROS_INFO("Initialize");
           reset();
-          step_++;
+          step_=Ready;
+          break;
+        }
+        case GiveUp:
+        {
+          ROS_INFO("Give Up");
+          sendMessage(pub_msg, MSG::GIVE_UP);
+          step_=Wait;
           break;
         }
         case Ready:
@@ -594,7 +669,6 @@ public:
             if (is_new_) {
               ros::Duration(1).sleep();
               is_new_ = false;
-              break;
             }
             
             if (currEnvironment != newEnvironment) {
@@ -616,11 +690,9 @@ public:
             moveArm(vector<double>({ 0.0, 0.0, 1.5708, -1.5708, 0.0 }));
 
             sendMessage(pub_msg, MSG::I_AM_READY);
-
             ROS_INFO("Task start!");
 
-            step_++;
-            step_ = 10;
+            step_=WaitForInstruction;
           }
           break;
         }
@@ -629,17 +701,77 @@ public:
           if(instruction_msg_!="")
           {
             ROS_INFO("%s", instruction_msg_.c_str());
-            
-            step_++;
+            currentTask = ParserCb::execute(instruction_msg_, ac_parser, PARSER_ENABLE);
+            if (currentTask.GO_TO == ROOM::DEFAULT_ROOM) {
+              step_=GiveUp;
+            } else {
+              step_=GoToRoom1;
+            }
           }
           break;
         }
         case GoToRoom1:
         {
-          if (moveRobot(NavPosesDict[MAP::L20_01][ROOM::LIVING_ROOM][PLACE::SQUARE_LOW_TABLE].val)){
-            
-            step_++;
+          MAP currentMap = maps[currEnvironment];
+          ROOM targetRoom = currentTask.GO_TO;
+          PLACE targetPlace = PLACE::SAFE_PLACE;
+          NavPose targetPose;
+          map<PLACE, NavPose>* dictROOM = &NavPosesDict[currentMap][targetRoom];
+          if (dictROOM->find(targetPlace) == dictROOM->end()) {
+            ROS_INFO_STREAM("Missing definition for " << mapsr[currentMap] << ":" << roomsr[targetRoom] << ":" << placesr[targetPlace]);
+            if (dictROOM->size() == 0) {
+              ROS_INFO_STREAM("Missing definition for " << mapsr[currentMap] << ":" << roomsr[targetRoom]);
+              step_=GiveUp;
+              break;
+            } else {
+              targetPose = (dictROOM->begin()->second);
+            }
+          } else {
+            targetPose = (*dictROOM)[targetPlace];
           }
+          if (moveRobot(targetPose.val)){
+            sendMessage(pub_msg, MSG::ROOM_REACHED);
+            step_=Exploration;
+          } else {
+            ROS_INFO_STREAM("Move Failed, Giving Up.");
+            step_=GiveUp;
+          }
+          break;
+        }
+        case Exploration:
+        {
+          MAP currentMap = maps[currEnvironment];
+          ROOM targetRoom = currentTask.GO_TO;
+          map<PLACE, NavPose>* dictROOM = &NavPosesDict[currentMap][targetRoom];
+
+          // Prioritize Places
+          if (currentTask.GRASP_REF1_PLACE != PLACE::DEFAULT_PLACE) {
+            if ( (*dictROOM).find(currentTask.GRASP_REF1_PLACE) != (*dictROOM).end()){
+              bool result = explorePlace((*dictROOM)[currentTask.GRASP_REF1_PLACE]);
+              if (result){break;}
+            }
+          }
+          if (currentTask.GRASP_REF2_PLACE != PLACE::DEFAULT_PLACE) {
+            if ( (*dictROOM).find(currentTask.GRASP_REF2_PLACE) != (*dictROOM).end()){
+              bool result = explorePlace((*dictROOM)[currentTask.GRASP_REF2_PLACE]);
+              if (result){break;}
+            }
+          }
+
+          // Look in all other places in the room.
+          bool result = false;
+          for(auto roomPlace : *(dictROOM)) {
+            if (roomPlace.first == currentTask.GRASP_REF1_PLACE ||
+            roomPlace.first == currentTask.GRASP_REF2_PLACE){
+              continue;
+            }
+            bool result = explorePlace(roomPlace.second);
+            if (result){break;}
+          }
+          if (result){break;}
+          // Object not found case.
+          step_=WaitForInstruction;
+          sendMessage(pub_msg, MSG::DOES_NOT_EXIST);
           break;
         }
         case Grasp:
@@ -662,17 +794,29 @@ public:
             ROS_INFO("HEAD Right Position");
             moveHead(vector<double>({-0.6, -0.6887}));
             // Default.
-            ROS_INFO("HEAD Default Position");
-            moveHead(vector<double>({0.0, -0.6887}));
+            ROS_INFO("HEAD Found Object Position");
+            moveHead(headTargetDetectionFound);
 
-            // srvEOctomap.request.enable = false;
-            // enable_octomap.call(srvEOctomap);
-
-            Detect3DCb::execute(ac_detection3D);
+            // Use best out of 3 Detections.
+            enable2D();
+            boost::shared_ptr<object_detector::objectDetectionArray const> input_detections = ros::topic::waitForMessage<object_detector::objectDetectionArray>("/detections", nh_);
+            boost::shared_ptr<object_detector::objectDetectionArray const> input_detections2 = ros::topic::waitForMessage<object_detector::objectDetectionArray>("/detections", nh_);
+            boost::shared_ptr<object_detector::objectDetectionArray const> input_detections3 = ros::topic::waitForMessage<object_detector::objectDetectionArray>("/detections", nh_);
+            input_detections = input_detections->detections.size() < input_detections2->detections.size() ? input_detections2 : input_detections;
+            input_detections = input_detections->detections.size() < input_detections3->detections.size() ? input_detections3 : input_detections;
+            disable2D();
+            
+            object_detector::objectDetectionArray force_object;
+            for (auto detection : input_detections->detections) {
+              if (detection.labelText == objectsr[currentTask.GRASP_OBJ]) {
+                force_object.detections.push_back(detection);
+                break;
+              }
+            }
+            Detect3DCb::execute(ac_detection3D, force_object);
             if (Detect3DCb::result == NULL || Detect3DCb::result->object_cloud.samples.size() == 0) {
               ROS_INFO_STREAM("No object found");
-              step_++;
-              break;
+              attempts -= 1;continue;
             }
 
             gpd_ros::detect_grasps_samples srv_grasps;
@@ -702,37 +846,87 @@ public:
               attempts -= 1;
             }
           }
-          step_++;
+          if (status_code == moveit_msgs::MoveItErrorCodes::SUCCESS) {
+            step_=GoToRoom2;          
+            sendMessage(pub_msg, MSG::OBJECT_GRASPED);
+          } else {
+            step_=GiveUp;
+          }
+          break;
+        }
+        case GoToRoom2:
+        {
+          MAP currentMap = maps[currEnvironment];
+          ROOM targetRoom = currentTask.PUT_ROOM;
+          PLACE destination = currentTask.PUT_PLACE;
+
+          if (targetRoom != ROOM::DEFAULT_ROOM) {
+            if (NavPosesDict[currentMap][targetRoom].find(destination) != NavPosesDict[currentMap][targetRoom].end()) {
+              moveRobot(NavPosesDict[currentMap][targetRoom][destination].val);
+              step_=Place;
+              break;
+            }
+          }
+          bool found = false;
+          for(auto navPosesRoom: NavPosesDict[currentMap]) {
+            if (found){break;}
+            for(auto navPosesPlace: navPosesRoom.second) {
+              if (navPosesPlace.first != destination){continue;}
+              currentTask.PUT_ROOM = navPosesRoom.first;
+              moveRobot(navPosesPlace.second.val);
+              step_=Place;
+              found = true;
+              break;
+            }
+          }
+
+          if (found){break;}
+          step_=GiveUp;
           break;
         }
         case Place:
         {
+          MAP currentMap = maps[currEnvironment];
+          ROOM targetRoom = currentTask.PUT_ROOM;
+          PLACE destination = currentTask.PUT_PLACE;
+
           int status_code = -1;
           int attempts = 3;
 
-          geometry_msgs::PoseStamped target_pose;
-          target_pose.header.frame_id = "map";
-          target_pose.header.stamp = ros::Time::now();
-          target_pose.pose.position.x = 0.4280264973640442;
-          target_pose.pose.position.y = 0.5202085375785828;
-          target_pose.pose.position.z = 0.5050736665725708 + 0.1; // Add Table Margin
-          
-          while (status_code < 0 && attempts > 0) {
-            status_code = PlaceCb::execute(target_pose, ac_pick, listener_);
-            attempts -= 1;
-            if (status_code == moveit_msgs::MoveItErrorCodes::PLANNING_FAILED ||
-              status_code == moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN) {
-              attempts = 0;
-              continue;
-            }
-            if (status_code == moveit_msgs::MoveItErrorCodes::SUCCESS) {
-              ROS_INFO_STREAM("GRASP SUCCESS");
-            }else {
-              ROS_INFO_STREAM("GRASP FAILED: #" << attempts);  
+          if (targetRoom != ROOM::DEFAULT_ROOM) {
+            if (PlacePosesDict[currentMap][targetRoom].find(destination) != PlacePosesDict[currentMap][targetRoom].end()) {
+              vector<ObjectPlaceInfo> objectplaces = PlacePosesDict[currentMap][targetRoom][destination];
+              // TO-DO Order to prioritize REFs.
+              for(auto objectplace: objectplaces) {
+                geometry_msgs::PoseStamped target_pose = objectplace.val.val;
+                target_pose.pose.position.z = 0.5050736665725708 + 0.1; // Add Table Margin
+                
+                while (status_code < 0 && attempts > 0) {
+                  status_code = PlaceCb::execute(target_pose, ac_pick, listener_);
+                  attempts -= 1;
+                  if (status_code == moveit_msgs::MoveItErrorCodes::PLANNING_FAILED ||
+                    status_code == moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN) {
+                    attempts = 0;
+                    continue;
+                  }
+                  if (status_code == moveit_msgs::MoveItErrorCodes::SUCCESS) {
+                    ROS_INFO_STREAM("GRASP SUCCESS");
+                  }else {
+                    ROS_INFO_STREAM("GRASP FAILED: #" << attempts);  
+                  }
+                }
+                if (status_code == moveit_msgs::MoveItErrorCodes::SUCCESS) {
+                  step_=TaskFinished;          
+                  sendMessage(pub_msg, MSG::TASK_FINISHED);
+                  break;
+                }
+              }
+              step_=Place;
+              break;
             }
           }
-          
-          step_++;
+              
+          step_=GiveUp;
           break;
         }
       }

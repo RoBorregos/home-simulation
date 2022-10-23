@@ -12,7 +12,6 @@ struct TaskInfo
   TaskInfo(Entities ent):
     ent_(ent)
   {
-    // TODO: Checar qp si no esta 
     GO_TO = rooms[ent.GO_TO];
     GRASP_OBJ = objects[ent.GRASP_OBJ]; 
     GRASP_PREP = prepositions[ent.GRASP_PREP]; 
@@ -20,7 +19,8 @@ struct TaskInfo
     GRASP_REF1_OBJECT = objects[ent.GRASP_REF1]; 
     GRASP_REF2_PLACE = places[ent.GRASP_REF2]; 
     GRASP_REF2_OBJECT = objects[ent.GRASP_REF2]; 
-    PUT_PLACE = places[ent.PUT_PLACE]; 
+    PUT_PLACE = places[ent.PUT_PLACE];
+    PUT_ROOM = rooms[ent.PUT_ROOM];
     PUT_PREP = prepositions[ent.PUT_PREP]; 
     PUT_REF1_PLACE = places[ent.PUT_REF1]; 
     PUT_REF1_OBJECT = objects[ent.PUT_REF1]; 
@@ -36,6 +36,7 @@ struct TaskInfo
   PLACE GRASP_REF2_PLACE;
   OBJECT GRASP_REF2_OBJECT;
   PLACE PUT_PLACE;
+  ROOM PUT_ROOM;
   PREPOSITION PUT_PREP;
   PLACE PUT_REF1_PLACE;
   OBJECT PUT_REF1_OBJECT;
@@ -68,31 +69,47 @@ namespace ParserCb{
     ROS_INFO("Parser - Got Feedback");
   }
 
-  Entities execute(string msg, ParserClient &ac_parser)
+  TaskInfo execute(string msg, ParserClient &ac_parser, bool PARSER_ENABLE)
   {
-    ROS_INFO("Executing Parser");
-    ParserGoal goalParser;
-    goalParser.instruction = msg;
-    ParserCb::active = true;
-    ac_parser.sendGoal(goalParser, &ParserCb::doneCb, &ParserCb::activeCb, &ParserCb::feedbackCb);
-    ros::Rate loop_rate(10);
-    while(ParserCb::active) {
-      loop_rate.sleep();
-      continue;
+    TaskInfo res;
+    if (!PARSER_ENABLE) {
+      res.GO_TO = LIVING_ROOM;
+      res.GRASP_OBJ = BEAR_DOLL;
+      res.GRASP_PREP = ON_THE;
+      res.GRASP_REF1_PLACE = WOODEN_SIDE_TABLE;
+      res.PUT_PLACE = CORNER_SOFA;
+      res.PUT_PREP = IN_THE;
+      res.PUT_REF1_PLACE = DINING_TABLE;
+    }
+    int attempts = 3;
+    while(PARSER_ENABLE && res.GO_TO == ROOM::DEFAULT_ROOM && attempts-- > 0) {
+      ROS_INFO("Executing Parser");
+      ParserGoal goalParser;
+      goalParser.instruction = msg;
+      ParserCb::active = true;
+      ac_parser.sendGoal(goalParser, &ParserCb::doneCb, &ParserCb::activeCb, &ParserCb::feedbackCb);
+      ros::Rate loop_rate(10);
+      while(ParserCb::active) {
+        loop_rate.sleep();
+        continue;
+      }
+      res = TaskInfo(ParserCb::result->entities);
     }
     ROS_INFO_STREAM("Parser Finished");
 
-    ROS_INFO_STREAM("GO_TO " << ParserCb::result->entities.GO_TO);
-    ROS_INFO_STREAM("GRASP_OBJ " << ParserCb::result->entities.GRASP_OBJ);
-    ROS_INFO_STREAM("GRASP_PREP " << ParserCb::result->entities.GRASP_PREP);
-    ROS_INFO_STREAM("GRASP_REF1 " << ParserCb::result->entities.GRASP_REF1);
-    ROS_INFO_STREAM("GRASP_REF2 " << ParserCb::result->entities.GRASP_REF2);
-    ROS_INFO_STREAM("PUT_PLACE " << ParserCb::result->entities.PUT_PLACE);
-    ROS_INFO_STREAM("PUT_PREP " << ParserCb::result->entities.PUT_PREP);
-    ROS_INFO_STREAM("PUT_REF1 " << ParserCb::result->entities.PUT_REF1);
-    ROS_INFO_STREAM("PUT_REF2 " << ParserCb::result->entities.PUT_REF2);
-    
-    ROS_INFO_STREAM("Parser Finished");
-    return ParserCb::result->entities;
+    ROS_INFO_STREAM("GO_TO: " << res.GO_TO); 
+    ROS_INFO_STREAM("GRASP_OBJ: " << res.GRASP_OBJ); 
+    ROS_INFO_STREAM("GRASP_PREP: " << res.GRASP_PREP); 
+    ROS_INFO_STREAM("GRASP_REF1_PLACE: " << res.GRASP_REF1_PLACE); 
+    ROS_INFO_STREAM("GRASP_REF1_OBJECT: " << res.GRASP_REF1_OBJECT); 
+    ROS_INFO_STREAM("GRASP_REF2_PLACE: " << res.GRASP_REF2_PLACE); 
+    ROS_INFO_STREAM("GRASP_REF2_OBJECT: " << res.GRASP_REF2_OBJECT); 
+    ROS_INFO_STREAM("PUT_PLACE: " << res.PUT_PLACE); 
+    ROS_INFO_STREAM("PUT_PREP: " << res.PUT_PREP); 
+    ROS_INFO_STREAM("PUT_REF1_PLACE: " << res.PUT_REF1_PLACE); 
+    ROS_INFO_STREAM("PUT_REF1_OBJECT: " << res.PUT_REF1_OBJECT); 
+    ROS_INFO_STREAM("PUT_REF2_PLACE: " << res.PUT_REF2_PLACE); 
+    ROS_INFO_STREAM("PUT_REF2_OBJECT: " << res.PUT_REF2_OBJECT); 
+    return res;
   }
 }
