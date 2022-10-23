@@ -2,6 +2,7 @@ version: "3.1"
 
 intents:
   - regular_instruction
+  - gprep_instruction
   - greet
   - goodbye
   - affirm
@@ -11,38 +12,63 @@ intents:
   - bot_challenge
 
 entities:
-  - room
-  - object
-  - behavior
-  - preposition
-  - place
-
+  - GO_TO
+  - GRASP_OBJ
+  - GRASP_PREP
+  - GRASP_REF_1
+  - GRASP_REF_2
+  - PUT_PREP
+  - PUT_REF_1
+  - PUT_REF_2
+  - PUT_PLACE
+  
 slots:
-  room:
+  GO_TO:
     type: text
     mappings:
     - type: from_entity
-      entity: room
-  object:
+      entity: GO_TO
+  GRASP_OBJ:
     type: text
     mappings:
     - type: from_entity
-      entity: object
-  behavior:
+      entity: GRASP_OBJ
+  GRASP_PREP:
     type: text
     mappings: 
     - type: from_entity
-      entity: behavior
-  preposition:
+      entity: GRAS_PREP
+  GRASP_REF_1:
     type: text
     mappings:
     - type: from_entity
-      entity: preposition
-  place: 
+      entity: GRASṔ_REF_1
+  GRASP_REF_2: 
     type: text
     mappings:
     - type: from_entity
-      entity: place
+      entity: GRASP_REF_2
+  PUT_PREP:
+    type: text
+    mappings: 
+    - type: from_entity
+      entity: PUT_PREP
+  PUT_REF_1:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: PUT_REF_1
+  PUT_REF_2: 
+    type: text
+    mappings:
+    - type: from_entity
+      entity: PUT_REF_2
+  PUT_PLACE: 
+    type: text
+    mappings:
+    - type: from_entity
+      entity: PUT_PLACE
+  
 
 responses:
   utter_greet:
@@ -64,7 +90,10 @@ responses:
   utter_iamabot:
   - text: "I am a bot, powered by Rasa."
 
-  utter_instruction:
+  utter_regular_instruction:
+  - text: "I have to go to {room} grasp the {object}, the behavior is {behavior} and it's {preposition} {place}"
+
+  utter_gprep_instruction:
   - text: "I have to go to {room} grasp the {object}, the behavior is {behavior} and it's {preposition} {place}"
 
 
