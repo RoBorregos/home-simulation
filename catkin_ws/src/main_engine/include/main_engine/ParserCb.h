@@ -74,12 +74,11 @@ namespace ParserCb{
     TaskInfo res;
     if (!PARSER_ENABLE) {
       res.GO_TO = LIVING_ROOM;
-      res.GRASP_OBJ = BEAR_DOLL;
+      res.GRASP_OBJ = SUGAR;
       res.GRASP_PREP = ON_THE;
-      res.GRASP_REF1_PLACE = WOODEN_SIDE_TABLE;
-      res.PUT_PLACE = CORNER_SOFA;
-      res.PUT_PREP = IN_THE;
-      res.PUT_REF1_PLACE = DINING_TABLE;
+      res.GRASP_REF1_PLACE = WHITE_SIDE_TABLE;
+      res.PUT_PLACE = SOFA;
+      res.PUT_ROOM = LIVING_ROOM;
     }
     int attempts = 3;
     while(PARSER_ENABLE && res.GO_TO == ROOM::DEFAULT_ROOM && attempts-- > 0) {

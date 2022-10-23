@@ -81,6 +81,8 @@ struct ObjectParams
   int label = -1;
   /* Valid Object. */
   bool isValid = false;
+  /* Valid Object. */
+  int file_id = 0;
 };
 
 class Detect3D
@@ -507,6 +509,7 @@ public:
     int min_index = -1;
     for(int j=0;j<objects.size();j++) {
       float curr_distance = getDistance(objects[j].center_cam.pose.position, force_object_.point3D);
+      ROS_INFO_STREAM( j << ": Distance center cluster to object point " << curr_distance);
       if (curr_distance < min_distance) {
         min_distance = curr_distance;
         min_index = j;
@@ -514,10 +517,11 @@ public:
     }
     if (min_index != -1) {
       objects[min_index].label = force_object_.label;
-      ROS_INFO_STREAM("Detection binded with object " << min_index << " -> Min Distance: " << min_distance);
+      ROS_INFO_STREAM("Detection binded with object " << min_index << " File Id: " << objects[min_index].file_id << " -> Min Distance: " << min_distance);
       objects = { objects[min_index] };
+    } else {
+      objects = {};
     }
-    objects = {};
   }
 
   void addGraspInfo(const sensor_msgs::PointCloud2& input, const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, ObjectParams &object) {
@@ -601,6 +605,7 @@ public:
       tmp.mesh.reset(new shape_msgs::Mesh);
       extractObjectDetails(clusters[i], tmp, table_params);
       ROS_INFO_STREAM("File saved: " << "pcl_object_"+std::to_string(i)+".pcd");
+      tmp.file_id = i;
       pcl::io::savePCDFile("pcl_object_"+std::to_string(i)+".pcd", *clusters[i]);
       if (tmp.isValid) {
         objects.push_back(tmp);

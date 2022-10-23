@@ -53,5 +53,7 @@
 	<node pkg="main_engine" type="fix_tf.py" name="fix_tf"/>
 	<node pkg="pick_and_place" type="octomap_enable.py" name="octomap_enable"/>
 
+	<!-- Grasping PickAnd Place -->
+  <node name="Detection2DFake" pkg="object_detector" type="Detection2DFake.py" output="screen" respawn="true" />
 
 </launch>

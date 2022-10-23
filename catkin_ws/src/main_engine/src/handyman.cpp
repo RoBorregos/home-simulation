@@ -94,6 +94,7 @@ private:
   ros::Publisher  pub_head_trajectory;
   ros::Publisher  pub_base_twist;
   ros::Publisher  pub_initial_pose;
+  ros::Publisher  pub_info_pose;
 
   tf::TransformListener listener_;
 
@@ -102,7 +103,7 @@ private:
   TaskInfo currentTask;
   OBJECT targetDetection;
   bool targetDetectionFound = false;
-  vector<double> headTargetDetectionFound = vector<double>({0.0, -0.6887});
+  vector<double> headTargetDetectionFound = vector<double>({0.0, -0.5887});
 
   // clear_octomap
   ros::ServiceClient clear_octomap;
@@ -319,7 +320,14 @@ private:
   }
 
   bool moveArm(const std::vector<double> &positions){
-    move_arm_->setJointValueTarget(positions);
+    std::map<std::string, double> positions_({
+      {"arm_flex_joint", positions[0]},
+      {"arm_lift_joint", positions[1]},
+      {"arm_roll_joint", positions[2]},
+      {"wrist_flex_joint", positions[3]},
+      {"wrist_roll_joint", positions[4]}
+    }); 
+    move_arm_->setJointValueTarget(positions_);
     move_arm_->setPlanningTime(1.0);
     bool success = (move_arm_->move() == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     if (success) {
@@ -392,6 +400,15 @@ private:
     last_t = timeSinceEpochMillisec();
   }
 
+  void transformMapToCamera(geometry_msgs::Point &value) {
+    geometry_msgs::PointStamped old;
+    geometry_msgs::PointStamped newp;
+    old.header.frame_id = "/map";
+    old.header.stamp = ros::Time(0);
+    old.point = value;
+    listener_.transformPoint("/head_rgbd_sensor_depth_frame", old, newp);
+    value = newp.point;
+  }
   void moveBase(ros::Publisher &publisher, double linear_x, double linear_y, double angular_z, double time_ms)
   {
     if(listener_.canTransform("/odom_xr_link", "/base_footprint", ros::Time(0)) == false)
@@ -454,7 +471,34 @@ private:
   }
 
   bool moveRobot(geometry_msgs::PoseStamped target) {
+    publishInfo(target);
     return MoveBaseCb::execute(target, ac_move);
+  }
+
+  void publishInfo(geometry_msgs::PoseStamped target) {
+    return pub_info_pose.publish(target);
+    geometry_msgs::PoseStamped position;
+    position.header.frame_id = "map";
+    position.pose.position.x = 0.5524308294591512;
+    position.pose.position.y = 0.24833975277601641;
+    position.pose.position.z = 0.7068511427706418; 
+    position.pose.orientation.x = -0.5195918821618419;
+    position.pose.orientation.y = 0.5197011721605078;
+    position.pose.orientation.z = -0.025166215400788592;
+    position.pose.orientation.w = 0.6777179570063863;
+  }
+
+  void publishInfo(geometry_msgs::Point target) {
+    geometry_msgs::PoseStamped position;
+    position.header.frame_id = "map";
+    position.pose.position.x = target.x; 
+    position.pose.position.y = target.y; 
+    position.pose.position.z = target.z; 
+    position.pose.orientation.x = 0.0;
+    position.pose.orientation.y = 0.0;
+    position.pose.orientation.z = 0.0;
+    position.pose.orientation.w = 1;
+    return pub_info_pose.publish(position);
   }
 
   void setInitialPose() {
@@ -506,35 +550,35 @@ private:
       targetDetection = currentTask.GRASP_OBJ;
       targetDetectionFound = false;
       enable2D();
-      ros::Duration(5).sleep();
+      ros::Duration(3).sleep();
 
       if (targetDetectionFound) {
         disable2D();
         step_=Grasp;
-        headTargetDetectionFound = vector<double>({0.0 -0.6887});
+        headTargetDetectionFound = vector<double>({0.0 -0.5887});
         return true;
       }
       // Check Left.
       ROS_INFO("HEAD Left Position");
-      moveHead(vector<double>({0.5, -0.6887}));
+      moveHead(vector<double>({0.5, -0.5887}));
       if (targetDetectionFound) {
         disable2D();
-        headTargetDetectionFound = vector<double>({0.5, -0.6887});
+        headTargetDetectionFound = vector<double>({0.5, -0.5887});
         step_=Grasp;
         return true;
       }
       // Check Right.
       ROS_INFO("HEAD Right Position");
-      moveHead(vector<double>({-0.5, -0.6887}));
+      moveHead(vector<double>({-0.5, -0.5887}));
       if (targetDetectionFound) {
         disable2D();
-        headTargetDetectionFound = vector<double>({-0.5, -0.6887});
+        headTargetDetectionFound = vector<double>({-0.5, -0.5887});
         step_=Grasp;
         return true;
       }
       // Default.
       ROS_INFO("HEAD Default Position");
-      moveHead(vector<double>({0.0, -0.6887}));
+      moveHead(vector<double>({0.0, -0.5887}));
       disable2D();
     }
     return false;
@@ -598,9 +642,6 @@ public:
     nh_.param<std::string>("/handyman/sub_trajectories_topic_name",       sub_trajectories_topic_name,       "/move_group/fake_controller_joint_states");
     nh_.param<int>("/handyman/force_step", force_step_, -1);
 
-
-    init();
-
     ros::Time waiting_start_time;
 
     ROS_INFO("Handyman start!");
@@ -613,6 +654,7 @@ public:
     ros::Subscriber sub_detections = nh_.subscribe<object_detector::objectDetectionArray>("/detections", 100, &HandymanMain::detectionsCallback, this);
     ros::Publisher  pub_msg = nh_.advertise<handyman::HandymanMsg>(pub_msg_to_moderator_topic_name, 10);
     pub_initial_pose = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1000);
+    pub_info_pose = nh_.advertise<geometry_msgs::PoseStamped>("/info/pose", 1000);
     pub_active_2D = nh_.advertise<std_msgs::Bool>("detectionsActive", 10);
     pub_base_twist = nh_.advertise<geometry_msgs::Twist>(pub_base_twist_topic_name, 10);
     pub_arm_trajectory = nh_.advertise<trajectory_msgs::JointTrajectory>(pub_arm_trajectory_topic_name, 10);
@@ -625,6 +667,8 @@ public:
     client_grasping.waitForExistence();
 
     tf::TransformListener tf_listener;
+
+    init();
 
     // Start: Temporary Added
     ROS_INFO_STREAM("Force Step: " << force_step_);
@@ -681,13 +725,13 @@ public:
 
             // Set Unity Head to Default Position.
             ROS_INFO("HEAD Default Position");
-            moveHead(vector<double>({0.0, -0.6887}));
+            moveHead(vector<double>({0.0, -0.5887}));
             // Set Unity Hand to Default Position.
             ROS_INFO("HAND Default Position - OPEN");
             moveHand(vector<double>({1.0598}));
             // Set Unity Arm to Default Position.
             ROS_INFO("ARM Default Position");
-            moveArm(vector<double>({ 0.0, 0.0, 1.5708, -1.5708, 0.0 }));
+            moveArm(vector<double>({ -0.088, 0.191, 1.5708, -1.5708, 0.0 }));
 
             sendMessage(pub_msg, MSG::I_AM_READY);
             ROS_INFO("Task start!");
@@ -712,6 +756,7 @@ public:
         }
         case GoToRoom1:
         {
+          ROS_INFO("GoToRoom1.");
           MAP currentMap = maps[currEnvironment];
           ROOM targetRoom = currentTask.GO_TO;
           PLACE targetPlace = PLACE::SAFE_PLACE;
@@ -740,6 +785,7 @@ public:
         }
         case Exploration:
         {
+          ROS_INFO("Exploration.");
           MAP currentMap = maps[currEnvironment];
           ROOM targetRoom = currentTask.GO_TO;
           map<PLACE, NavPose>* dictROOM = &NavPosesDict[currentMap][targetRoom];
@@ -776,6 +822,7 @@ public:
         }
         case Grasp:
         {
+          ROS_INFO("Grasp");
           bool pickFailed = false;
           int status_code = -1;
           int attempts = 3;
@@ -789,10 +836,10 @@ public:
 
             // Check Left.
             ROS_INFO("HEAD Left Position");
-            moveHead(vector<double>({0.6, -0.6887}));
+            moveHead(vector<double>({0.6, -0.5887}));
             // Check Right.
             ROS_INFO("HEAD Right Position");
-            moveHead(vector<double>({-0.6, -0.6887}));
+            moveHead(vector<double>({-0.6, -0.5887}));
             // Default.
             ROS_INFO("HEAD Found Object Position");
             moveHead(headTargetDetectionFound);
@@ -809,6 +856,11 @@ public:
             object_detector::objectDetectionArray force_object;
             for (auto detection : input_detections->detections) {
               if (detection.labelText == objectsr[currentTask.GRASP_OBJ]) {
+                publishInfo(detection.point3D);
+                if (!DETECTION_ENABLE) {
+                  detection.point3D.z+=0.05; // Add value on z to avoid table pieces.
+                  transformMapToCamera(detection.point3D);
+                }
                 force_object.detections.push_back(detection);
                 break;
               }
@@ -856,6 +908,7 @@ public:
         }
         case GoToRoom2:
         {
+          ROS_INFO("GoToRoom2");
           MAP currentMap = maps[currEnvironment];
           ROOM targetRoom = currentTask.PUT_ROOM;
           PLACE destination = currentTask.PUT_PLACE;
@@ -886,6 +939,7 @@ public:
         }
         case Place:
         {
+          ROS_INFO("Place");          
           MAP currentMap = maps[currEnvironment];
           ROOM targetRoom = currentTask.PUT_ROOM;
           PLACE destination = currentTask.PUT_PLACE;
@@ -899,6 +953,7 @@ public:
               // TO-DO Order to prioritize REFs.
               for(auto objectplace: objectplaces) {
                 geometry_msgs::PoseStamped target_pose = objectplace.val.val;
+                publishInfo(target_pose);
                 target_pose.pose.position.z = 0.5050736665725708 + 0.1; // Add Table Margin
                 
                 while (status_code < 0 && attempts > 0) {
