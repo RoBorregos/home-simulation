@@ -4,11 +4,12 @@ nlu:
 - intent: regular_instruction
   examples: |
     - Go to the [kitchen](ROOM), grasp the [pink cup](GRASP_OBJ) and [put it](PUT_REF_1) [on the](PUT_PREP) [square low table](PUT_PLACE)
-    - Go to the [kitchen](ROOM), grasp the [game controller](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [kitchen](ROOM), grasp the [piggy bank](GRASP_OBJ) and [hand](PUT_REF_1)
+    - Go to the [living room](ROOM), grasp the [game controller](GRASP_OBJ) and [discard](PUT_REF_1) 
+    - Go to the [lobby](ROOM), grasp the [canned_juice](GRASP_OBJ) [on the](GRASP_PREP) [wooden_side_table](GRASP_REF_1) and [discard](PUT_REF_1) it [in the](PUT_PREP) [trash_box_for_bottle_can](PUT_PLACE) in the [living room](PUT_REF_1)
+    - Go to the [bedroom](ROOM), grasp the [piggy bank](GRASP_OBJ) and [hand](PUT_REF_1)
     - Go to the [kitchen](ROOM), grasp the [pink cup](GRASP_OBJ) [next_to_the](GRASP_PREP) [game controller](GRASP_REF_1) and [put it](PUT_REF_1) [on the](PUT_PREP) [square low table](PUT_PLACE)
     - Go to the [kitchen](ROOM), grasp the [sugar](GRASP_OBJ) [next_to_the](GRASP_PREP) [canned juice](GRASP_REF_1) and [put it](PUT_REF_1) [on the](PUT_PREP) [square low table](PUT_PLACE)
-
+    - Go to the living room, grasp the bear_doll on the square_low_table and put it on the white_side_table in the living room.
 
 
 - intent: greet
@@ -278,6 +279,7 @@ nlu:
     - wooden side table
     - armchair
     - cardboard box
+    - wagon
     
 - lookup: GRASP_REF_1
   examples: |
