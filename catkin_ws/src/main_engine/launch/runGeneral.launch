@@ -48,7 +48,7 @@
 	/> -->
 
 	<!-- RVIZ -->
-	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find handyman)/launch/hsr.rviz"/>
+	<node pkg="rviz" type="rviz" name="rviz" args="-d $(find main_engine)/launch/all.rviz"/>
 
 	<node pkg="main_engine" type="fix_tf.py" name="fix_tf"/>
 	<node pkg="pick_and_place" type="octomap_enable.py" name="octomap_enable"/>

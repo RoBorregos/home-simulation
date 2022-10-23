@@ -8,7 +8,7 @@
 
 [submodule "catkin_ws/src/sigverse_ros_package"]
 	path = catkin_ws/src/sigverse_ros_package
-	url = https://github.com/SIGVerse/sigverse_ros_package.git
+	url = https://github.com/RoBorregos/sigverse_ros_package.git
 
 [submodule "common-unity"]
 	path = common-unity
@@ -22,10 +22,10 @@
 	url = https://github.com/ToyotaResearchInstitute/hsr_meshes.git
 [submodule "catkin_ws/src/manipulation/gpd_ros"]
 	path = catkin_ws/src/manipulation/gpd_ros
-	url = https://github.com/atenpas/gpd_ros.git
+	url = https://github.com/RoBorregos/gpd_ros.git
 [submodule "lib/gpd"]
 	path = lib/gpd
-	url = https://github.com/atenpas/gpd.git
+	url = https://github.com/RoBorregos/gpd.git
 [submodule "catkin_ws/src/bio_ik"]
 	path = catkin_ws/src/bio_ik
 	url = https://github.com/TAMS-Group/bio_ik.git

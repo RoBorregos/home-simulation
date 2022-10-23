@@ -4,6 +4,7 @@ string GRASP_PREP
 string GRASP_REF1
 string GRASP_REF2
 string PUT_PLACE
+string PUT_ROOM
 string PUT_PREP
 string PUT_REF1
 string PUT_REF2
