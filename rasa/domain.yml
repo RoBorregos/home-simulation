@@ -21,6 +21,7 @@ entities:
   - PUT_REF_1
   - PUT_REF_2
   - PUT_PLACE
+  - ROOM
   
 slots:
   GO_TO:
@@ -68,6 +69,11 @@ slots:
     mappings:
     - type: from_entity
       entity: PUT_PLACE
+  ROOM: 
+    type: text
+    mappings:
+    - type: from_entity
+      entity: ROOM
   
 
 responses:
@@ -91,10 +97,10 @@ responses:
   - text: "I am a bot, powered by Rasa."
 
   utter_regular_instruction:
-  - text: "I have to go to {room} grasp the {object}, the behavior is {behavior} and it's {preposition} {place}"
+  - text: "I have to go to {GO_TO} grasp the {GRASP_OBJ}, the behavior is {PUT_REF_1} and it's {PUT_PRE} {ROOM}"
 
   utter_gprep_instruction:
-  - text: "I have to go to {room} grasp the {object}, the behavior is {behavior} and it's {preposition} {place}"
+  - text: "I have to go to {GO_TO} grasp the {GRASP_OBJ} {GRASP_PREP} {GRASP_REF_1} , the behavior is {PUT_REF_1} and it's {PUT_PRE} {ROOM}"
 
 
 session_config:
