@@ -3,59 +3,11 @@ version: "3.1"
 nlu:
 - intent: regular_instruction
   examples: |
-    - Go to the [kitchen](GO_TO), grasp the [pink cup](GRASP_OBJ) and [put it](PUT_REF_1) [on the](PUT_PREP) [square_low_table](PUT_PLACE)
-    - Go to the [kitchen](GO_TO), grasp the [game controller](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [kitchen](GO_TO), grasp the [piggy bank](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [kitchen](GO_TO), grasp the [matryoshka](GRASP_OBJ) and [put it](PUT_REF_1) [in the](PUT_PREP) [wagon](PUT_PLACE)
-    - Go to the [kitchen](GO_TO), grasp the [white cup](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [kitchen](GO_TO), grasp the [tumbler](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [bedroom](GO_TO), grasp the [empty ketchup](GRASP_OBJ) and [put it](PUT_REF_1) [next to the ](PUT_PREP) [white table](PUT_PLACE)
-    - Go to the [bedroom](GO_TO), grasp the [filled ketchup](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [bedroom](GO_TO), grasp the [ground pepper](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [bedroom](GO_TO), grasp the [salt](GRASP_OBJ) and [put it](PUT_REF_1) [under the](PUT_PREP) [thrash box for recycle](PUT_PLACE)
-    - Go to the [bedroom](GO_TO), grasp the [sauce](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [bedroom](GO_TO), grasp the [soysauce](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [living room](GO_TO), grasp the [sugar](GRASP_OBJ) and [put it](PUT_REF_1) [on the](PUT_PREP) [thrash box for bumable](PUT_PLACE)
-    - Go to the [living room](GO_TO), grasp the [canned juice](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [living room](GO_TO), grasp the [big empty plastic bottle](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [living room](GO_TO), grasp the [big filled plastic bottle](GRASP_OBJ) and [put it](PUT_REF_1) [next to the](PUT_PREP) [thrash_box_for_bottle_can](PUT_PLACE)
-    - Go to the [living room](GO_TO), grasp the [empty plastic bottle](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [living room](GO_TO), grasp the [filled plastic bottle](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [lobby](GO_TO), grasp the [trash box for recycle](GRASP_OBJ) and [put it](PUT_REF_1) [under the](PUT_PREP) [low_table](PUT_PLACE)
-    - Go to the [lobby](GO_TO), grasp the [trash box for burnable](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [lobby](GO_TO), grasp the [trash box for bottle_can](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [lobby](GO_TO), grasp the [cubic clock](GRASP_OBJ) and [put it](PUT_REF_1) [over the](PUT_PREP) [wagon](PUT_PLACE)
-    - Go to the [lobby](GO_TO), grasp the [bear doll](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [lobby](GO_TO), grasp the [dog doll](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [kitchen](GO_TO), grasp the [rabbit doll](GRASP_OBJ) and [put it](PUT_REF_1) [on the](PUT_PREP) [square_low_table](PUT_PLACE)
-    - Go to the [kitchen](GO_TO), grasp the [toy car](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [kitchen](GO_TO), grasp the [toy penguin](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [kitchen](GO_TO), grasp the [toy duck](GRASP_OBJ) and [put it](PUT_REF_1) [in the](PUT_PREP) [wagon](PUT_PLACE)
-    - Go to the [kitchen](GO_TO), grasp the [nursing bottle](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [kitchen](GO_TO), grasp the [apple](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [bedroom](GO_TO), grasp the [cigarette](GRASP_OBJ) and [put it](PUT_REF_1) [next to the ](PUT_PREP) [white_table](PUT_PLACE)
-    - Go to the [bedroom](GO_TO), grasp the [hourglass](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [bedroom](GO_TO), grasp the [rubik's_cube](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [bedroom](GO_TO), grasp the [spray_bottle](GRASP_OBJ) and [put it](PUT_REF_1) [under the](PUT_PREP) [thrash_box_for_recycle](PUT_PLACE)
-    - Go to the [bedroom](GO_TO), grasp the [oil](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [bedroom](GO_TO), grasp the [soysauce](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [living room](GO_TO), grasp the [sugar](GRASP_OBJ) and [put it](PUT_REF_1) [on the](PUT_PREP) [thrash_box_for_bumable](PUT_PLACE)
-    - Go to the [living room](GO_TO), grasp the [canned juice](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [living room](GO_TO), grasp the [big empty plastic bottle](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [living room](GO_TO), grasp the [big filled plastic ]bottle(GRASP_OBJ) and [put it](PUT_REF_1) [next to the](PUT_PREP) [thrash_box_for_bottle_can](PUT_PLACE)
-    - Go to the [living room](GO_TO), grasp the [empty plastic bottle](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [living room](GO_TO), grasp the [filled plastic bottle](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [lobby](GO_TO), grasp the [trash box for recycle](GRASP_OBJ) and [put it](PUT_REF_1) [under the](PUT_PREP) [low_table](PUT_PLACE)
-    - Go to the [lobby](GO_TO), grasp the [trash box for burnable](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [lobby](GO_TO), grasp the [trash box for bottle_can](GRASP_OBJ) and [hand](PUT_REF_1)
-    - Go to the [lobby](GO_TO), grasp the [cubic clock](GRASP_OBJ) and [put it](PUT_REF_1) [over the](PUT_PREP) [wagon](PUT_PLACE)
-    - Go to the [lobby](GO_TO), grasp the [big filled plastic ]bottle](GRASP_OBJ) and [discard](PUT_REF_1) 
-    - Go to the [lobby](GO_TO), grasp the [big empty plastic bottle](GRASP_OBJ) and [hand](PUT_REF_1)
-
-
-- intent: gprep_instruction
-  examples: |
-    - Go to the [lobby](GO_TO), grasp the [big empty plastic bottle](GRASP_OBJ) and [hand](PUT_REF_1)
+    - Go to the [kitchen](ROOM), grasp the [pink cup](GRASP_OBJ) and [put it](PUT_REF_1) [on the](PUT_PREP) [square low table](PUT_PLACE)
+    - Go to the [kitchen](ROOM), grasp the [game controller](GRASP_OBJ) and [discard](PUT_REF_1) 
+    - Go to the [kitchen](ROOM), grasp the [piggy bank](GRASP_OBJ) and [hand](PUT_REF_1)
+    - Go to the [kitchen](ROOM), grasp the [pink cup](GRASP_OBJ) [next_to_the](GRASP_PREP) [game controller](GRASP_REF_1) and [put it](PUT_REF_1) [on the](PUT_PREP) [square low table](PUT_PLACE)
+    - Go to the [kitchen](ROOM), grasp the [sugar](GRASP_OBJ) [next_to_the](GRASP_PREP) [canned juice](GRASP_REF_1) and [put it](PUT_REF_1) [on the](PUT_PREP) [square low table](PUT_PLACE)
 
 
 
@@ -147,3 +99,254 @@ nlu:
     - are you a human?
     - am I talking to a bot?
     - am I talking to a human?
+
+
+- lookup: ROOM
+  examples: |
+    - bedroom
+    - living room
+    - lobby
+    - kitchen
+
+- lookup: GO_TO
+  examples: |
+    - wooden bed
+    - iron bed
+    - white chair
+    - dinning tabe
+    - white rack
+    - kitchen
+    - lobby
+    - living room
+    - bedroom
+    - sofa
+    - trash box for burnable
+    - trash box for recycle
+    - trash box for bottle can
+    - wooden shelf
+    - corner sofa
+    - square low table
+    - round low table
+    - white side table
+    - wooden side table
+    - armchair
+    - cardboard box
+
+
+- lookup: GRASP_OBJ
+  examples: |
+    - white cuo
+    - pink cup
+    - tumbler
+    - empty ketchup
+    - filled ketchup
+    - ground peper
+    - salt
+    - sauce
+    - soysauce
+    - sugar
+    - canned juice
+    - big empty plastic bottle
+    - big filled plastic bottle
+    - empty plastic bottle
+    - filled plastic bottle
+    - cubic clock
+    - bear doll
+    - dog doll
+    - rabbit doll
+    - toy car
+    - toy penguin
+    - toy duck
+    - nursing bottle
+    - apple
+    - cigarette
+    - hourglass
+    - rubics cube
+    - spray bottle
+    - game controller
+    - piggy bank
+    - matryoshka
+
+- lookup: PUT_REF_1
+  examples: |
+    - white cuo
+    - pink cup
+    - tumbler
+    - empty ketchup
+    - filled ketchup
+    - ground peper
+    - salt
+    - sauce
+    - soysauce
+    - sugar
+    - canned juice
+    - big empty plastic bottle
+    - big filled plastic bottle
+    - empty plastic bottle
+    - filled plastic bottle
+    - cubic clock
+    - bear doll
+    - dog doll
+    - rabbit doll
+    - toy car
+    - toy penguin
+    - toy duck
+    - nursing bottle
+    - apple
+    - cigarette
+    - hourglass
+    - rubics cube
+    - spray bottle
+    - game controller
+    - piggy bank
+    - matryoshka
+
+- lookup: PUT_REF_2
+  examples: |
+    - white cup
+    - pink cup
+    - tumbler
+    - empty ketchup
+    - filled ketchup
+    - ground peper
+    - salt
+    - sauce
+    - soysauce
+    - sugar
+    - canned juice
+    - big empty plastic bottle
+    - big filled plastic bottle
+    - empty plastic bottle
+    - filled plastic bottle
+    - cubic clock
+    - bear doll
+    - dog doll
+    - rabbit doll
+    - toy car
+    - toy penguin
+    - toy duck
+    - nursing bottle
+    - apple
+    - cigarette
+    - hourglass
+    - rubics cube
+    - spray bottle
+    - game controller
+    - piggy bank
+    - matryoshka
+
+- lookup: GRASP_PREP
+  examples: |
+    - next to the
+    - on the
+    - in the
+    - under the
+    - close to the
+    - in front of
+    - between
+    
+- lookup: PUT_PREP
+  examples: |
+    - next to the
+    - on the
+    - in the
+    - under the
+    - close to the
+    - in front of
+    - between
+
+- lookup: PUT_PLACE
+  examples: |
+    - wooden bed
+    - iron bed
+    - white chair
+    - dinning tabe
+    - white rack
+    - kitchen
+    - lobby
+    - living room
+    - bedroom
+    - sofa
+    - trash box for burnable
+    - trash box for recycle
+    - trash box for bottle can
+    - wooden shelf
+    - corner sofa
+    - square low table
+    - round low table
+    - white side table
+    - wooden side table
+    - armchair
+    - cardboard box
+    
+- lookup: GRASP_REF_1
+  examples: |
+    - white cuo
+    - pink cup
+    - tumbler
+    - empty ketchup
+    - filled ketchup
+    - ground peper
+    - salt
+    - sauce
+    - soysauce
+    - sugar
+    - canned juice
+    - big empty plastic bottle
+    - big filled plastic bottle
+    - empty plastic bottle
+    - filled plastic bottle
+    - cubic clock
+    - bear doll
+    - dog doll
+    - rabbit doll
+    - toy car
+    - toy penguin
+    - toy duck
+    - nursing bottle
+    - apple
+    - cigarette
+    - hourglass
+    - rubics cube
+    - spray bottle
+    - game controller
+    - piggy bank
+    - matryoshka
+
+- lookup: GRASP_REF_2
+  examples: |
+    - white cuo
+    - pink cup
+    - tumbler
+    - empty ketchup
+    - filled ketchup
+    - ground peper
+    - salt
+    - sauce
+    - soysauce
+    - sugar
+    - canned juice
+    - big empty plastic bottle
+    - big filled plastic bottle
+    - empty plastic bottle
+    - filled plastic bottle
+    - cubic clock
+    - bear doll
+    - dog doll
+    - rabbit doll
+    - toy car
+    - toy penguin
+    - toy duck
+    - nursing bottle
+    - apple
+    - cigarette
+    - hourglass
+    - rubics cube
+    - spray bottle
+    - game controller
+    - piggy bank
+    - matryoshka
+
+
+
+

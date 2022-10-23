@@ -4,7 +4,11 @@ stories:
 - story: regular_instruction
   steps:
   - intent: regular_instruction
-  - action: utter_instruction
+  - action: utter_regular_instruction
+- story: gprep_instruction
+  steps:
+  - intent: regular_instruction
+  - action: utter_gprep_instruction
 
 - story: happy path
   steps:
