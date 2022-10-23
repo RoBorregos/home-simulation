@@ -36,8 +36,7 @@ For more information about the project system, structure, and development areas 
 | Kevin Vega | [](mailto:) | []() | PM Software, Integration & Speech |
 | Victoria García | [](mailto:) | []() | Speech |
 | Aldo Samaniego | [aldojesussam0@gmail.com](mailto:aldojesussam0@gmail.com) | [@AldoSamaniego](https://github.com/AldoSamaniego) | Object Detection |
-| Jamir Leal | [](mailto:) | []() | Computer Vision |
-| Ricardo Chapa | [ricardochaparomero@gmail.com](mailto:ricardochaparomero@gmail.com) | [@RicardoChapaRomero](https://github.com/RicardoChapaRomero) | Human Recognition |
+| Ivan Romero | [i.wells.ar@gmail.com](mailto:i.wells.ar@gmail.com) | [@IvanRomero03](https://github.com/IvanRomero03) | Human Pose Detection |
 | Andy Salcedo | [andrea2702@gmail.com](mailto:andrea2702@gmail.com) | [@andrea2702](https://github.com/andrea2702) | Navigation |
 | Edison Altamirano | [](mailto:) | []() | Navigation |
 | Bryan Marquez | [bryanmqz@outlook.com](mailto:) | [https://github.com/BryanMqz]() | Navigation |
