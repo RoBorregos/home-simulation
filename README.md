@@ -22,7 +22,8 @@ This project is made using:
 - [Rasa NLU](https://rasa.com/)
 - [Tensorflow](https://www.tensorflow.org/learn)
 - [PaddlePaddle](https://github.com/paddlepaddle/paddle)
-- [Arduino](https://www.arduino.cc/)
+- [MoveIt](https://moveit.ros.org/)
+- [Grasp Pose Detection (GPD)](https://github.com/atenpas/gpd)
 
 <img src="readme_resources/SystemDesignv3_gray.png" width="1500" ><img>
 
@@ -33,11 +34,8 @@ For more information about the project system, structure, and development areas 
 | Name                    | Email                                                               | Github                                                       | Role      |
 | ----------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------ | --------- |
 | José Cisneros | [joseacisnerosm@gmail.com](mailto:joseacisnerosm@gmail.com) | [@Josecisneros001](https://github.com/Josecisneros001) | PM Software, Integration & Object Manipulation |
-| Kevin Vega | [](mailto:) | []() | PM Software, Integration & Speech |
-| Victoria García | [](mailto:) | []() | Speech |
+| Kevin Vega | [a01612430@tec.mx](mailto:a01612430@tec.mx) | [@KevinVegaTec](https://github.com/KevinVegaTec) | PM Software, Integration & Speech |
 | Aldo Samaniego | [aldojesussam0@gmail.com](mailto:aldojesussam0@gmail.com) | [@AldoSamaniego](https://github.com/AldoSamaniego) | Object Detection |
 | Ivan Romero | [i.wells.ar@gmail.com](mailto:i.wells.ar@gmail.com) | [@IvanRomero03](https://github.com/IvanRomero03) | Human Pose Detection |
-| Andy Salcedo | [andrea2702@gmail.com](mailto:andrea2702@gmail.com) | [@andrea2702](https://github.com/andrea2702) | Navigation |
-| Edison Altamirano | [](mailto:) | []() | Navigation |
-| Bryan Marquez | [bryanmqz@outlook.com](mailto:) | [https://github.com/BryanMqz]() | Navigation |
-| Erasmo Villareal | [](mailto:) | []() | Object Manipulation |
+| Edison Altamirano | [a00825234@tec.mx](mailto:a00825234@tec.mx) | [@EdisonAltamirano](https://github.com/EdisonAltamirano) | Navigation |
+| Bryan Marquez | [bryanmqz@outlook.com](mailto:bryanmqz@outlook.com) | [@BryanMqz](https://github.com/BryanMqz) | Navigation |
