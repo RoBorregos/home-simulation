@@ -18,12 +18,12 @@ def main():
 
     res = []
     point3D_ = Point()
-    point3D_.x = -0.8002572059631348
-    point3D_.y = 4.109121799468994
-    point3D_.z = 0.5597487688064575          
+    point3D_.x = 1.4683277606964111
+    point3D_.y = -0.5442641973495483
+    point3D_.z = 0.6405620574951172          
     res.append(objectDetection(
         label = 1,
-        labelText = "sugar",
+        labelText = "dog_doll",
         score = 1.0,
         ymin =  0.0,
         xmin =  0.0,

@@ -31,6 +31,13 @@
     <remap from="image_rect" to="/hsrb/head_rgbd_sensor/depth_registered/image_raw"/>
     <remap from="points" to="/hsrb/head_rgbd_sensor/depth_registered/points"/>
   </node>
+	<!-- <node pkg="nodelet" type="nodelet" name="nodelet2"
+        args="load depth_image_proc/point_cloud_xyzrgb nodelet_manager">
+    <remap from="rgb/camera_info" to="/hsrb/head_rgbd_sensor/depth_registered/camera_info"/>
+    <remap from="rgb/image_rect_color" to="/hsrb/head_rgbd_sensor/rgb/image_raw"/>
+    <remap from="depth_registered/image_rect" to="/hsrb/head_rgbd_sensor/depth_registered/image_raw"/>
+    <remap from="depth_registered/points" to="/hsrb/head_rgbd_sensor/depth_registered/points/rgb"/>
+  </node> -->
 
 	<!-- MoveIt -->
   <include file="$(find hsr_moveit_config)/launch/demo.launch" >

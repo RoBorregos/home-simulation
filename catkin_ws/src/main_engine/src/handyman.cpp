@@ -283,6 +283,7 @@ private:
     publisher.publish(joint_trajectory);
   }
 
+
   void operateHand(ros::Publisher &publisher, const std::vector<double> &positions, std::vector<std::string> &joint_names, ros::Duration &duration)
   {
     trajectory_msgs::JointTrajectoryPoint point;
@@ -330,6 +331,28 @@ private:
     move_arm_->setJointValueTarget(positions_);
     move_arm_->setPlanningTime(1.0);
     bool success = (move_arm_->move() == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    if (success) {
+      ROS_INFO_STREAM("Arm moved to initial position.");
+      return true;
+    }
+    ROS_INFO_STREAM("Arm movement to initial position failed.");
+    return false;
+  }
+
+  bool moveGroup(const std::vector<double> &positions){
+    std::map<std::string, double> positions_({
+      {"odom_y", positions[0]},
+      {"odom_x", positions[1]},
+      {"odom_r", positions[2]},
+      {"arm_lift_joint", positions[3]},
+      {"arm_flex_joint", positions[4]},
+      {"arm_roll_joint", positions[5]},
+      {"wrist_flex_joint", positions[6]},
+      {"wrist_roll_joint", positions[7]}
+    }); 
+    move_all_->setJointValueTarget(positions_);
+    move_all_->setPlanningTime(1.0);
+    bool success = (move_all_->move() == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     if (success) {
       ROS_INFO_STREAM("Arm moved to initial position.");
       return true;
@@ -550,22 +573,24 @@ private:
       targetDetection = currentTask.GRASP_OBJ;
       targetDetectionFound = false;
       enable2D();
-      ros::Duration(3).sleep();
 
-      if (targetDetectionFound) {
-        disable2D();
-        step_=Grasp;
-        headTargetDetectionFound = vector<double>({0.0 -0.5887});
-        return true;
-      }
-      // Check Left.
-      ROS_INFO("HEAD Left Position");
-      moveHead(vector<double>({0.5, -0.5887}));
-      if (targetDetectionFound) {
-        disable2D();
-        headTargetDetectionFound = vector<double>({0.5, -0.5887});
-        step_=Grasp;
-        return true;
+      if (DETECTION_ENABLE) {
+        ros::Duration(3).sleep();
+        if (targetDetectionFound) {
+          disable2D();
+          step_=Grasp;
+          headTargetDetectionFound = vector<double>({0.0 -0.5887});
+          return true;
+        }
+        // Check Left.
+        ROS_INFO("HEAD Left Position");
+        moveHead(vector<double>({0.5, -0.5887}));
+        if (targetDetectionFound) {
+          disable2D();
+          headTargetDetectionFound = vector<double>({0.5, -0.5887});
+          step_=Grasp;
+          return true;
+        }
       }
       // Check Right.
       ROS_INFO("HEAD Right Position");
@@ -858,7 +883,7 @@ public:
               if (detection.labelText == objectsr[currentTask.GRASP_OBJ]) {
                 publishInfo(detection.point3D);
                 if (!DETECTION_ENABLE) {
-                  detection.point3D.z+=0.05; // Add value on z to avoid table pieces.
+                  // detection.point3D.z+=0.05; // Add value on z to avoid table pieces.
                   transformMapToCamera(detection.point3D);
                 }
                 force_object.detections.push_back(detection);
@@ -899,6 +924,7 @@ public:
             }
           }
           if (status_code == moveit_msgs::MoveItErrorCodes::SUCCESS) {
+            moveGroup({0, 0, 0, -0.088, 0.191, 1.5708, -1.5708, 0.0});
             step_=GoToRoom2;          
             sendMessage(pub_msg, MSG::OBJECT_GRASPED);
           } else {
@@ -939,7 +965,31 @@ public:
         }
         case Place:
         {
-          ROS_INFO("Place");          
+          ROS_INFO("Place");
+          // Default.
+          ROS_INFO("HEAD Found Object Position");
+          moveHead(vector<double>({0.0, -0.4}));
+          
+          std_srvs::Empty emptyCall;
+          clear_octomap.call(emptyCall);
+          pick_and_place::EnableOctomap srvEOctomap;
+          srvEOctomap.request.enable = true;
+          enable_octomap.call(srvEOctomap);          
+          ros::Duration(1.5).sleep();
+
+          // // Check Left.
+          // ROS_INFO("HEAD Left Position");
+          // moveHead(vector<double>({0.2, -0.4}));
+          // // Check Right.
+          // ROS_INFO("HEAD Right Position");
+          // moveHead(vector<double>({-0.2, -0.4}));
+          // // Default.
+          // ROS_INFO("HEAD Found Object Position");
+          // moveHead(vector<double>({0.0, -0.4}));
+
+          if (currEnvironment == ""){currEnvironment = "Layout2019HM01";}
+          if (currentTask.PUT_ROOM == DEFAULT_ROOM){currentTask.PUT_ROOM = KITCHEN;}
+          if (currentTask.PUT_PLACE == DEFAULT_PLACE){currentTask.PUT_PLACE = WOODEN_SIDE_TABLE;}
           MAP currentMap = maps[currEnvironment];
           ROOM targetRoom = currentTask.PUT_ROOM;
           PLACE destination = currentTask.PUT_PLACE;
@@ -954,10 +1004,10 @@ public:
               for(auto objectplace: objectplaces) {
                 geometry_msgs::PoseStamped target_pose = objectplace.val.val;
                 publishInfo(target_pose);
-                target_pose.pose.position.z = 0.5050736665725708 + 0.1; // Add Table Margin
+                target_pose.pose.position.z += 0.10; // Add Table Margin
                 
                 while (status_code < 0 && attempts > 0) {
-                  status_code = PlaceCb::execute(target_pose, ac_pick, listener_);
+                  status_code = PlaceCb::execute(target_pose, ac_place, listener_);
                   attempts -= 1;
                   if (status_code == moveit_msgs::MoveItErrorCodes::PLANNING_FAILED ||
                     status_code == moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN) {
@@ -965,9 +1015,9 @@ public:
                     continue;
                   }
                   if (status_code == moveit_msgs::MoveItErrorCodes::SUCCESS) {
-                    ROS_INFO_STREAM("GRASP SUCCESS");
+                    ROS_INFO_STREAM("PLACE SUCCESS");
                   }else {
-                    ROS_INFO_STREAM("GRASP FAILED: #" << attempts);  
+                    ROS_INFO_STREAM("PLACE FAILED: #" << attempts);  
                   }
                 }
                 if (status_code == moveit_msgs::MoveItErrorCodes::SUCCESS) {
@@ -976,12 +1026,10 @@ public:
                   break;
                 }
               }
-              step_=Place;
-              break;
             }
           }
-              
-          step_=GiveUp;
+            
+          // step_=GiveUp;
           break;
         }
       }

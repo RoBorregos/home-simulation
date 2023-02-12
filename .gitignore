@@ -6,7 +6,7 @@ catkin_ws/devel/*
 catkin_ws/src/vision/src/human_detection/models/people/yolov3.weights
 
 
-
+AwardsCeremony.txt
 rasa/venv/*
 rasa/models/*
 rasa/.rasa/*

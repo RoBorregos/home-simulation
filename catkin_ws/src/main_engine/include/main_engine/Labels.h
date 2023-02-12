@@ -153,13 +153,13 @@ map<string, MAP> maps ({
   {"Layout2020HM01", MAP::L20_01},
   {"Layout2019HM01", MAP::L19_01},
   {"Layout2021HM01", MAP::L21_01},
-  {"Layout2019HM02", MAP::L19_01},
+  {"Layout2019HM02", MAP::L19_02},
 });
 map<MAP, string> mapsr ({
   {MAP::L20_01, "Layout2020HM01"},
   {MAP::L19_01, "Layout2019HM01"},
   {MAP::L21_01, "Layout2021HM01"},
-  {MAP::L19_01, "Layout2019HM02"},
+  {MAP::L19_02, "Layout2019HM02"},
 });
 
 map<string, PREPOSITION> prepositions ({
@@ -471,6 +471,9 @@ map<MAP, map<ROOM, map<PLACE, NavPose>>> NavPosesDict ({
     {
       {
         ROOM::LIVING_ROOM, {
+          // USING
+          {PLACE::SAFE_PLACE, NavPose(1, 0.256114661693573, 0.0, 0.0, 0.0, 0.0, 1)},
+          // USING
           {PLACE::WHITE_SIDE_TABLE, NavPose(1.93948233127594, 0.256114661693573, 0.0, 0.0, 0.0, -0.6848205381255134, 0.7287117609600399)},
           {PLACE::SQUARE_LOW_TABLE, NavPose(1.6020655632019043, 3.8968348503112793, 0.0, 0.0, 0.0, -0.9996586767371922, 0.02612527557837206)},
           {PLACE::TV_RACK, NavPose(0.6039611101150513, 5.154543399810791, 0.0, 0.0, 0.0, 0.7128737867773152, 0.7012923528213972)},
@@ -504,7 +507,8 @@ map<MAP, map<ROOM, map<PLACE, NavPose>>> NavPosesDict ({
           {PLACE::CUSTOM_KITCHEN, NavPose(7.793449878692627, 4.92230749130249, 0.0, 0.0, 0.0, 0.7034533644153533, 0.7107414185853531)}, ////////
           {PLACE::DINING_TABLE, NavPose(8.601373672485352, 3.3828446865081787, 0.0, 0.0, 0.0, -0.9932273818598938, 0.11618678033124367)},
           {PLACE::DINING_TABLE, NavPose(4.916623115539551, 3.558028221130371, 0.0, 0.0, 0.0, 0.006966960133528522, 0.9999757304387431)}, ////////
-          {PLACE::WOODEN_SIDE_TABLE, NavPose(4.918543338775635, 2.2396326065063477, 0.0, 0.0, 0.0, -0.7087806941997595, 0.705428896154465)},
+          // USING
+          {PLACE::WOODEN_SIDE_TABLE, NavPose(4.82, 2.3, 0.0, 0.0, 0.0, -0.83, 0.6)},
         }
       }
     },
@@ -852,9 +856,10 @@ map<MAP, map<ROOM, map<PLACE, vector<ObjectPlaceInfo>>>> PlacePosesDict ({
             },
           },
           {
+            // USING
             PLACE::WOODEN_SIDE_TABLE,
             {
-              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(5.072391033172607, 1.542228102684021, 0.40)),
+              ObjectPlaceInfo(PREPOSITION::ON_THE, "", "", NavPose(4.75, 1.47, 0.40)),
             },
           },
         },

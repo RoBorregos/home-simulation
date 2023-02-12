@@ -29,7 +29,7 @@ namespace PlaceCb{
     ROS_INFO("Place - Got Feedback");
   }
 
-  int execute(geometry_msgs::PoseStamped &target_pose, PickAndPlaceClient &ac_pick, tf::TransformListener &listener_)
+  int execute(geometry_msgs::PoseStamped &target_pose, PickAndPlaceClient &ac_place, tf::TransformListener &listener_)
   {
     tf::StampedTransform transform;
     listener_.lookupTransform("/map", "/base_footprint", ros::Time(0), transform);
@@ -45,7 +45,7 @@ namespace PlaceCb{
     goalPlace.object_name = "current";
     goalPlace.allow_contact_with = {"<octomap>"};
     PlaceCb::active = true;
-    ac_pick.sendGoal(goalPlace, &PlaceCb::doneCb, &PlaceCb::activeCb, &PlaceCb::feedbackCb);
+    ac_place.sendGoal(goalPlace, &PlaceCb::doneCb, &PlaceCb::activeCb, &PlaceCb::feedbackCb);
     ros::Rate loop_rate(10);
     while(PlaceCb::active) {
       loop_rate.sleep();

@@ -10,7 +10,7 @@ import moveit_commander
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from moveit_commander import PlanningSceneInterface
 from moveit_msgs.msg import Grasp, GripperTranslation, PickupAction, PickupGoal, PickupResult, MoveItErrorCodes
-from moveit_msgs.msg import PlaceAction, PlaceGoal, PlaceResult, PlaceLocation
+from moveit_msgs.msg import PlaceAction, PlaceGoal, PlaceResult, PlaceLocation, AllowedCollisionEntry
 from geometry_msgs.msg import Pose, PoseStamped, PoseArray, Vector3Stamped, Vector3, Quaternion
 from nav_msgs.msg import Odometry
 from pick_and_place.msg import PickAndPlaceAction, PickAndPlaceGoal, PickAndPlaceResult, PickAndPlaceFeedback
@@ -33,8 +33,8 @@ GRIPPER_GROUP="hand"
 GRASP_POSTURES_FRAME_ID="hand_eef_link"
 ALLOW_CONTACT = ["hand_eef_link", "hand_palm_link", "hand_motor_dummy_link", "hand_l_proximal_link", "hand_l_spring_proximal_link",
                  "hand_l_mimic_distal_link", "hand_l_distal_link", "hand_l_finger_tip_frame", "hand_l_finger_vacuum_frame",
-                "hand_r_proximal_link", "hand_r_spring_proximal_link", "hand_r_mimic_distal_link", "hand_r_distal_link",
-                "hand_r_finger_tip_frame", "<octomap>", "base_link"] 
+                "hand_r_proximal_link", "hand_r_spring_proximal_link", "hand_r_mimic_distal_link", "hand_r_distal_link", "wrist_roll_link"
+                "hand_r_finger_tip_frame", "<octomap>", "base_link", "base_l_drive_wheel_link", "base_r_drive_wheel_link"] 
 
 # Function to create a PickupGoal with the provided data.
 
@@ -77,11 +77,14 @@ def createPlaceGoal(place_locations,
     placeg.planning_options.plan_only = False
     placeg.planning_options.replan = True
     placeg.planning_options.replan_attempts = 3
-    placeg.allowed_touch_objects = ['<octomap>']
-    placeg.allowed_touch_objects.extend(links_to_allow_contact)
+    placeg.allowed_touch_objects = links_to_allow_contact
+    # TO-DO: Add entrys to collision matrix intead of creating a new one.
+    # allTrue = AllowedCollisionEntry([True for i in range(len(links_to_allow_contact))])
+    # placeg.planning_options.planning_scene_diff.allowed_collision_matrix.entry_names = links_to_allow_contact
+    # placeg.planning_options.planning_scene_diff.allowed_collision_matrix.entry_values = [allTrue for i in range(len(links_to_allow_contact))]
     return placeg
 
-def create_placings_from_object_pose(posestamped):
+def create_placings_from_object_pose(posestamped, allowed_touch_objects):
     """ Set PlaceLocation according to Pose sended """
     grasp_postures_frame_id = GRASP_POSTURES_FRAME_ID
     gripper_joint_names = ["hand_motor_joint", "hand_l_spring_proximal_joint", "hand_r_spring_proximal_joint"]
@@ -108,6 +111,7 @@ def create_placings_from_object_pose(posestamped):
         Vector3(-1.0, -0.30, 0.0), desired_distance = 0.20, min_distance = 0.0)
 
     pl.post_place_posture = pre_grasp_posture
+    pl.allowed_touch_objects = allowed_touch_objects
     place_locs.append(pl)
 
     return place_locs
@@ -389,7 +393,7 @@ class PickAndPlaceServer(object):
         # self.arm_group.go(wait=True)
         # self.arm_group.stop()
         
-        error_code = self.grasp_object(grasps, goal.object_name, goal.allow_contact_with)
+        error_code = self.grasp_object(grasps, goal.object_name, links_to_allow_contact)
         p_res = PickAndPlaceResult()
         p_res.error_code = error_code
         if error_code != 1:
@@ -439,12 +443,8 @@ class PickAndPlaceServer(object):
 
         possible_grasps = grasps
 
-        links_to_allow_contact = ALLOW_CONTACT
-
-        links_to_allow_contact.extend(allow_contact_with)
-
         goal = createPickupGoal(
-            ARM_GROUP, object_name, possible_grasps, links_to_allow_contact)
+            ARM_GROUP, object_name, possible_grasps, allow_contact_with)
         
         error_code = self.handle_pick_as(goal)
 
@@ -511,16 +511,14 @@ class PickAndPlaceServer(object):
         return PlaceScope.error_code
     
     # Function to place an object.
-    def place_object(self, object_pose, object_name, allow_contact_with = [], try_only_with_arm_first = False):
+    def place_object(self, object_pose, object_name, allow_contact_with = []):
 
-        possible_placings = create_placings_from_object_pose(object_pose)
-        
         links_to_allow_contact = ALLOW_CONTACT
-
         links_to_allow_contact.extend(allow_contact_with)
+        
+        possible_placings = create_placings_from_object_pose(object_pose, links_to_allow_contact)
 
         error_code = -1
-
         
         rospy.loginfo("Trying to place with arm and torso")
         

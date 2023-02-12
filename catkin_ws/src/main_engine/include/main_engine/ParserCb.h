@@ -8,7 +8,22 @@ typedef actionlib::SimpleActionClient<ParserAction> ParserClient;
 
 struct TaskInfo
 {
-  TaskInfo(){}
+  TaskInfo(){
+    GO_TO = DEFAULT_ROOM;
+    GRASP_OBJ = DEFAULT_OBJECT;
+    GRASP_PREP = DEFAULT_PREPOSITION;
+    GRASP_REF1_PLACE = DEFAULT_PLACE;
+    GRASP_REF1_OBJECT = DEFAULT_OBJECT;
+    GRASP_REF2_PLACE = DEFAULT_PLACE;
+    GRASP_REF2_OBJECT = DEFAULT_OBJECT;
+    PUT_PLACE = DEFAULT_PLACE;
+    PUT_ROOM = DEFAULT_ROOM;
+    PUT_PREP = DEFAULT_PREPOSITION;
+    PUT_REF1_PLACE = DEFAULT_PLACE;
+    PUT_REF1_OBJECT = DEFAULT_OBJECT;
+    PUT_REF2_PLACE = DEFAULT_PLACE;
+    PUT_REF2_OBJECT = DEFAULT_OBJECT;
+  }
   TaskInfo(Entities ent):
     ent_(ent)
   {
@@ -74,11 +89,11 @@ namespace ParserCb{
     TaskInfo res;
     if (!PARSER_ENABLE) {
       res.GO_TO = LIVING_ROOM;
-      res.GRASP_OBJ = SUGAR;
-      res.GRASP_PREP = ON_THE;
+      res.GRASP_OBJ = DOG_DOLL;
+      res.GRASP_PREP = IN_THE;
       res.GRASP_REF1_PLACE = WHITE_SIDE_TABLE;
-      res.PUT_PLACE = SOFA;
-      res.PUT_ROOM = LIVING_ROOM;
+      res.PUT_PLACE = WOODEN_SIDE_TABLE;
+      res.PUT_ROOM = KITCHEN;
     }
     int attempts = 3;
     while(PARSER_ENABLE && res.GO_TO == ROOM::DEFAULT_ROOM && attempts-- > 0) {
@@ -98,17 +113,10 @@ namespace ParserCb{
 
     ROS_INFO_STREAM("GO_TO: " << res.GO_TO); 
     ROS_INFO_STREAM("GRASP_OBJ: " << res.GRASP_OBJ); 
-    ROS_INFO_STREAM("GRASP_PREP: " << res.GRASP_PREP); 
+    ROS_INFO_STREAM("GRASP_PREP: " << res.GRASP_PREP);
     ROS_INFO_STREAM("GRASP_REF1_PLACE: " << res.GRASP_REF1_PLACE); 
-    ROS_INFO_STREAM("GRASP_REF1_OBJECT: " << res.GRASP_REF1_OBJECT); 
-    ROS_INFO_STREAM("GRASP_REF2_PLACE: " << res.GRASP_REF2_PLACE); 
-    ROS_INFO_STREAM("GRASP_REF2_OBJECT: " << res.GRASP_REF2_OBJECT); 
     ROS_INFO_STREAM("PUT_PLACE: " << res.PUT_PLACE); 
     ROS_INFO_STREAM("PUT_PREP: " << res.PUT_PREP); 
-    ROS_INFO_STREAM("PUT_REF1_PLACE: " << res.PUT_REF1_PLACE); 
-    ROS_INFO_STREAM("PUT_REF1_OBJECT: " << res.PUT_REF1_OBJECT); 
-    ROS_INFO_STREAM("PUT_REF2_PLACE: " << res.PUT_REF2_PLACE); 
-    ROS_INFO_STREAM("PUT_REF2_OBJECT: " << res.PUT_REF2_OBJECT); 
     return res;
   }
 }
